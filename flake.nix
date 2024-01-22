@@ -4,6 +4,7 @@
   inputs = {
     nixpkgs.url      = "github:NixOS/nixpkgs/nixos-unstable";
     rust-overlay.url = "github:oxalica/rust-overlay";
+    samply.url = "github:mstange/samply";
   };
 
   outputs = { self, nixpkgs, rust-overlay, ... }:
@@ -29,6 +30,7 @@
             eza
             fd
             rust-bin.beta.latest.default
+            samply
           ];
 
           shellHook = ''

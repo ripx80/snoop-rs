@@ -1,18 +1,16 @@
 use crate::snoop::*;
 use crate::SnoopError;
-use std::io::{BufReader, Read}; //BufRead
+use std::io::Read;
 
 // SnoopReader wraps an underlying io.SnoopReader to read packet data in SNOOP
 // format.  See https://tools.ietf.org/html/rfc1761
 // for information on the file format
-// We currenty read v2 file format and convert microsecond to nanoseconds
 // byte order in big-endian encoding.
 #[derive(Debug)]
 pub struct SnoopReader<R> {
     pub header: SnoopHeader,
-    r: BufReader<R>,
+    r: R,
     pad: u32,
-    //packetBuf: [u8;100], // needed?
     buf: [u8; 24], // packet header reuse
 }
 
@@ -20,7 +18,7 @@ impl<R> SnoopReader<R>
 where
     R: Read,
 {
-    pub fn new(r: BufReader<R>) -> Result<Self, SnoopError> {
+    pub fn new(r: R) -> Result<Self, SnoopError> {
         let mut r = Self {
             r,
             header: SnoopHeader {
@@ -36,10 +34,9 @@ where
     // internal use only
     fn read_header(&mut self) -> Result<[u8; 16], SnoopError> {
         let mut buffer = [0u8; SNOOP_HEADER_SIZE];
-
-        if let Err(e) = self.r.read_exact(&mut buffer) {
-            return Err(SnoopError::Io(e));
-        }
+        self.r
+            .read_exact(&mut buffer)
+            .map_err(|e| SnoopError::Io(e))?;
 
         if &buffer[0..8] != SNOOP_MAGIC {
             return Err(SnoopError::UnknownMagic);
@@ -49,9 +46,10 @@ where
             return Err(SnoopError::UnknownVersion);
         }
 
-        self.header.version = u32::from_be_bytes(buffer[8..12].try_into().unwrap()); // unwrap here is ok, we have 4 bytes
+        self.header.version = u32::from_be_bytes(buffer[8..12].try_into().unwrap());
+        // unwrap is safe here
         self.header.link_type =
-            DataLinkType::try_from(u32::from_be_bytes(buffer[12..16].try_into().unwrap())).unwrap(); // is this a nice way??
+            DataLinkType::try_from(u32::from_be_bytes(buffer[12..16].try_into().unwrap())).unwrap();
         Ok(buffer)
     }
 
@@ -66,6 +64,7 @@ where
             }
             return Err(SnoopError::Io(e));
         }
+        // unwrap is safe here
         ci.original_length = u32::from_be_bytes(self.buf[0..4].try_into().unwrap());
         ci.included_length = u32::from_be_bytes(self.buf[4..8].try_into().unwrap());
         ci.packet_record_length = u32::from_be_bytes(self.buf[8..12].try_into().unwrap());
@@ -80,16 +79,25 @@ where
         if ci.included_length > MAX_CAPTURE_LEN {
             return Err(SnoopError::CaptureLenExceeded);
         }
+
+        if ci.packet_record_length < (24 + ci.original_length) {
+            return Err(SnoopError::InvalidRecordLength);
+        }
         self.pad = ci.packet_record_length - (24 + ci.original_length);
         Ok(ci)
     }
-    // get a copy of the data, todo: maybe change the name?
+    // get a copy of the data
     pub fn read_packet(&mut self) -> Result<SnoopPacket, SnoopError> {
         let ci = match self.read_packet_header() {
             Ok(f) => f,
             Err(e) => return Err(e),
         };
-        let mut data = vec![0u8; usize::try_from(ci.included_length + self.pad).unwrap()];
+
+        let mut data = vec![
+            0u8;
+            usize::try_from(ci.included_length + self.pad)
+                .map_err(|_| SnoopError::InvalidHeaderField)?
+        ];
         if let Err(e) = self.r.read_exact(&mut data) {
             return Err(SnoopError::Io(e));
         }

@@ -80,12 +80,62 @@ mod tests {
     }
 
     #[test]
-    fn test_packet_header_invalid_orig() {}
+    fn test_packet_header_invalid_orig() {
+        let mut h: [u8; 40] = [0; 40];
+        h.copy_from_slice(&HEADER[0..40]); // 16 snoop, 24 packet header
+        h[17] = 0xFF;
+        h[18] = 0xFF;
+        h[19] = 0xFF;
+        h[20] = 0xFF;
+        assert!(matches!(
+            SnoopReader::new(BufReader::new(&h[..]))
+                .unwrap()
+                .read_packet(),
+            Err(SnoopError::OriginalLenExceeded)
+        ));
+    }
+
     #[test]
-    fn test_packet_header_invalid_caplen() {}
+    fn test_packet_header_invalid_cap() {
+        let mut h: [u8; 40] = [0; 40];
+        h.copy_from_slice(&HEADER[0..40]); // 16 snoop, 24 packet header
+        h[17] = 0x10;
+        h[18] = 0x00;
+        h[19] = 0x00;
+        h[20] = 0x00;
+
+        h[21] = 0x10;
+        h[22] = 0x00;
+        h[23] = 0x00;
+        h[24] = 0x00;
+        assert!(matches!(
+            SnoopReader::new(BufReader::new(&h[..]))
+                .unwrap()
+                .read_packet(),
+            Err(SnoopError::CaptureLenExceeded)
+        ));
+    }
+
     #[test]
-    fn test_packet_header_invalid_timestamp() {
-        // add test if snoop has a corrupt ci.s with a symbol that can not try_into and trigger unwrap
+    fn test_packet_header_invalid_cap_record() {
+        let mut h: [u8; 40] = [0; 40];
+        h.copy_from_slice(&HEADER[0..40]); // 16 snoop, 24 packet header
+                                           // this will pass the max_cap_len and orgin_len check
+        h[17] = 0x00;
+        h[18] = 0x10;
+        h[19] = 0x00;
+        h[20] = 0x00;
+
+        h[21] = 0x00;
+        h[22] = 0x10;
+        h[23] = 0x00;
+        h[24] = 0x00;
+        assert!(matches!(
+            SnoopReader::new(BufReader::new(&h[..]))
+                .unwrap()
+                .read_packet(),
+            Err(SnoopError::InvalidRecordLength)
+        ));
     }
 
     #[test]

@@ -3,7 +3,6 @@ todo:
     - copyright
     - licence
     - add doc test
-    - add features: reader, writer
     - add stream reader with buffio reader
 */
 
@@ -16,3 +15,6 @@ use crate::error::SnoopError;
 
 #[cfg(feature = "reader")]
 pub mod reader;
+
+#[cfg(feature = "writer")]
+pub mod writer;

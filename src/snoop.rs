@@ -1,10 +1,15 @@
+/*
+All integer values are stored in "big-endian" order, with the high-
+order bits first.
+*/
+
 pub const SNOOP_HEADER_SIZE: usize = 16; // bytes
 pub const SNOOP_MAGIC: &[u8] = &[0x73, 0x6E, 0x6F, 0x6F, 0x70, 0x00, 0x00, 0x00];
 pub const SNOOP_VERSION: &[u8] = &[0x00, 0x00, 0x00, 0x02]; // only support version 2
 pub const MAX_CAPTURE_LEN: u32 = 4096;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Copy, Clone)] // realy need Copy, Clone here
 pub enum DataLinkType {
     IEEE8023,
     TokenBus,
