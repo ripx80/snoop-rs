@@ -6,7 +6,10 @@ order bits first.
 pub const SNOOP_HEADER_SIZE: usize = 16; // bytes
 pub const SNOOP_MAGIC: &[u8] = &[0x73, 0x6E, 0x6F, 0x6F, 0x70, 0x00, 0x00, 0x00];
 pub const SNOOP_VERSION: &[u8] = &[0x00, 0x00, 0x00, 0x02]; // only support version 2
+
+pub const SNOOP_PACKET_HEADER_SIZE: usize = 24;
 pub const MAX_CAPTURE_LEN: u32 = 4096;
+pub const MAX_CAPTURE_PADS: u32 = 4;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default, PartialEq, Copy, Clone)] // realy need Copy, Clone here
@@ -50,7 +53,7 @@ pub struct SnoopHeader {
     pub link_type: DataLinkType,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct CapInfo {
     pub original_length: u32,        // 	OriginalLength        uint32	4
     pub included_length: u32,        // 	IncludedLength        uint32	8
@@ -63,4 +66,9 @@ pub struct CapInfo {
 pub struct SnoopPacket {
     pub ci: CapInfo,
     pub data: Vec<u8>,
+}
+
+pub struct SnoopPacketRef<'a> {
+    pub ci: &'a CapInfo,
+    pub data: &'a [u8],
 }

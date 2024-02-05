@@ -1,17 +1,15 @@
 use crate::snoop::*;
 use crate::SnoopError;
+use crate::parser::SnoopParser;
 use std::io::Read;
+use std::{thread, time};
 
-// SnoopReader wraps an underlying io.SnoopReader to read packet data in SNOOP
-// format.  See https://tools.ietf.org/html/rfc1761
-// for information on the file format
-// byte order in big-endian encoding.
 #[derive(Debug)]
 pub struct SnoopReader<R> {
-    pub header: SnoopHeader,
     r: R,
-    pad: u32,
-    buf: [u8; 24], // packet header reuse
+    header: SnoopHeader,
+    ci: CapInfo,
+    buf: Vec<u8>,
 }
 
 impl<R> SnoopReader<R>
@@ -24,87 +22,117 @@ where
             header: SnoopHeader {
                 ..Default::default()
             },
-            pad: 0,
-            buf: [0; 24],
+            ci: CapInfo {
+                ..Default::default()
+            },
+            buf: vec![0u8; (MAX_CAPTURE_LEN + MAX_CAPTURE_PADS) as usize],
         };
         r.read_header()?;
         Ok(r)
     }
 
-    // internal use only
-    fn read_header(&mut self) -> Result<[u8; 16], SnoopError> {
-        let mut buffer = [0u8; SNOOP_HEADER_SIZE];
-        self.r
-            .read_exact(&mut buffer)
-            .map_err(|e| SnoopError::Io(e))?;
-
-        if &buffer[0..8] != SNOOP_MAGIC {
-            return Err(SnoopError::UnknownMagic);
-        }
-
-        if &buffer[8..12] != SNOOP_VERSION {
-            return Err(SnoopError::UnknownVersion);
-        }
-
-        self.header.version = u32::from_be_bytes(buffer[8..12].try_into().unwrap());
-        // unwrap is safe here
-        self.header.link_type =
-            DataLinkType::try_from(u32::from_be_bytes(buffer[12..16].try_into().unwrap())).unwrap();
-        Ok(buffer)
+    pub fn header(&self)->&SnoopHeader{
+        &self.header
     }
 
-    // internal use only
-    fn read_packet_header(&mut self) -> Result<CapInfo, SnoopError> {
-        let mut ci = CapInfo {
-            ..Default::default()
-        };
-        if let Err(e) = self.r.read_exact(&mut self.buf) {
-            if e.kind() == std::io::ErrorKind::UnexpectedEof {
-                return Err(SnoopError::Eof(e)); // right way?
+    fn read_header(&mut self) -> Result<(), SnoopError> {
+        self.read_exact(0,SNOOP_HEADER_SIZE)?;
+        self.header = SnoopParser::parse_header(&self.buf[0..SNOOP_HEADER_SIZE])?;
+        Ok(())
+    }
+
+    // return readed bytes, even if it fails to reset cursor
+    pub fn read_exact(&mut self, start: usize, end: usize) -> Result<(), SnoopError> {
+        let mut buf = &mut self.buf[start..end];
+        let mut bytes: usize = 0;
+        while !buf.is_empty() {
+            match self.r.read(buf) {
+                Ok(0) => break, // maybe eof, tcp close or stream end
+                Ok(n) => {
+                    bytes += n;
+                    buf = &mut buf[n..]; // shrink buffer until its empty
+                }
+                Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+                Err(e) => return Err(SnoopError::Io(e)),
             }
-            return Err(SnoopError::Io(e));
         }
-        // unwrap is safe here
-        ci.original_length = u32::from_be_bytes(self.buf[0..4].try_into().unwrap());
-        ci.included_length = u32::from_be_bytes(self.buf[4..8].try_into().unwrap());
-        ci.packet_record_length = u32::from_be_bytes(self.buf[8..12].try_into().unwrap());
-        ci.cumulative_drops = u32::from_be_bytes(self.buf[12..16].try_into().unwrap());
-        ci.timestamp_seconds = u32::from_be_bytes(self.buf[16..20].try_into().unwrap());
-        ci.timestamp_microseconds = u32::from_be_bytes(self.buf[20..24].try_into().unwrap());
+        if !buf.is_empty(){
+            if bytes == 0 {
+                return Err(SnoopError::EndOfFile); // change name
 
-        if ci.included_length > ci.original_length {
-            return Err(SnoopError::OriginalLenExceeded);
-        }
+            }
+            return Err(SnoopError::UnexpectedEof(bytes))
 
-        if ci.included_length > MAX_CAPTURE_LEN {
-            return Err(SnoopError::CaptureLenExceeded);
         }
-
-        if ci.packet_record_length < (24 + ci.original_length) {
-            return Err(SnoopError::InvalidRecordLength);
-        }
-        self.pad = ci.packet_record_length - (24 + ci.original_length);
-        Ok(ci)
+        Ok(())
     }
-    // get a copy of the data
-    pub fn read_packet(&mut self) -> Result<SnoopPacket, SnoopError> {
-        let ci = match self.read_packet_header() {
-            Ok(f) => f,
-            Err(e) => return Err(e),
-        };
 
-        let mut data = vec![
-            0u8;
-            usize::try_from(ci.included_length + self.pad)
-                .map_err(|_| SnoopError::InvalidHeaderField)?
-        ];
-        if let Err(e) = self.r.read_exact(&mut data) {
-            return Err(SnoopError::Io(e));
+    pub fn read_until(&mut self, size: usize, time: time::Duration) -> Result<(), SnoopError> {
+        let mut bytes: usize = 0;
+        loop {
+            match self.read_exact(bytes, size){
+                Ok(_) => break,
+                Err(e) => match e {
+                    SnoopError::EndOfFile =>{
+                        thread::sleep(time);
+                    }
+                    SnoopError::UnexpectedEof(n) => {
+                        bytes +=n;
+                        thread::sleep(time);
+                    },
+                    _ => return Err(e),
+                }
+            };
         }
-        // skip pads, fastest solution?
-        data.truncate(usize::try_from(ci.included_length).unwrap());
-        Ok(SnoopPacket { ci, data })
+        Ok(())
     }
+
+    // add: return bytes as Result and Error
+    pub fn read_ref(&mut self) -> Result<SnoopPacketRef, SnoopError> {
+        //let mut bytes: usize = 0;
+        self.read_exact(0,SNOOP_PACKET_HEADER_SIZE)?;
+        SnoopParser::parse_packet_header(&self.buf[..SNOOP_PACKET_HEADER_SIZE], &mut self.ci)?;
+
+        self.read_exact(0,SnoopParser::data_len(&self.ci))?;
+        Ok(SnoopPacketRef{
+            ci: &self.ci,
+            data: &self.buf[..usize::try_from(self.ci.included_length).unwrap()],
+        })
+    }
+
+    // add: return bytes as Result and Error
+    pub fn read(&mut self) -> Result<SnoopPacket, SnoopError> {
+        let pr = self.read_ref()?;
+        Ok(SnoopPacket{
+            ci: pr.ci.clone(),
+            data: pr.data.to_vec(),
+        })
+    }
+
+    // if the R is not fully written this function blocks until new bytes
+    // add: return bytes as Result and Error
+    pub fn read_stream(&mut self) -> Result<SnoopPacketRef, SnoopError> {
+        // blocking
+        let time = time::Duration::from_millis(10000);
+        self.read_until(SNOOP_PACKET_HEADER_SIZE, time)?;
+
+        SnoopParser::parse_packet_header(&self.buf[..SNOOP_PACKET_HEADER_SIZE], &mut self.ci)?;
+
+        self.read_until(SnoopParser::data_len(&self.ci), time)?;
+
+        Ok(SnoopPacketRef{
+            ci: &self.ci,
+            data: &self.buf[..usize::try_from(self.ci.included_length).unwrap()],
+        })
+    }
+
+    pub fn iter_ref(&mut self) -> Option<Result<SnoopPacketRef, SnoopError>>{
+        match self.read_ref() {
+            Ok(packet) => Some(Ok(packet)),
+            Err(SnoopError::Eof(_)) => None,
+            Err(e) => Some(Err(e)),
+        }
+}
 }
 
 impl<R> Iterator for SnoopReader<R>
@@ -113,10 +141,11 @@ where
 {
     type Item = Result<SnoopPacket, SnoopError>;
     fn next(&mut self) -> Option<Self::Item> {
-        match self.read_packet() {
+        match self.read() {
             Ok(packet) => Some(Ok(packet)),
-            Err(SnoopError::Eof(_)) => None,
+            Err(SnoopError::EndOfFile) => None,
             Err(e) => Some(Err(e)),
         }
     }
+
 }

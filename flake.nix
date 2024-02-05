@@ -31,6 +31,7 @@
             fd
             rust-bin.beta.latest.default
             samply
+            hyperfine
           ];
 
           shellHook = ''

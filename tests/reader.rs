@@ -20,7 +20,7 @@ mod tests {
         assert_eq!(
             SnoopReader::new(BufReader::new(HEADER))
                 .unwrap()
-                .header
+                .header()
                 .link_type,
             DataLinkType::Ethernet
         );
@@ -32,7 +32,7 @@ mod tests {
         h.copy_from_slice(&HEADER[0..16]);
         h[14] = 0xFF;
         let s = SnoopReader::new(BufReader::new(&h[..])).unwrap();
-        assert_eq!(s.header.link_type, DataLinkType::Unassigned);
+        assert_eq!(s.header().link_type, DataLinkType::Unassigned);
     }
 
     #[test]
@@ -61,7 +61,7 @@ mod tests {
     fn test_header_invalid_short() {
         assert!(matches!(
             SnoopReader::new(BufReader::new(&HEADER[0..14])),
-            Err(SnoopError::Io(_))
+            Err(SnoopError::UnexpectedEof(_))
         ));
     }
 
@@ -69,7 +69,7 @@ mod tests {
     fn test_packet_header_ci() {
         let packet = SnoopReader::new(BufReader::new(HEADER))
             .unwrap()
-            .read_packet()
+            .read()
             .unwrap();
         assert_eq!(packet.ci.original_length, 42);
         assert_eq!(packet.ci.included_length, 42);
@@ -88,9 +88,7 @@ mod tests {
         h[19] = 0xFF;
         h[20] = 0xFF;
         assert!(matches!(
-            SnoopReader::new(BufReader::new(&h[..]))
-                .unwrap()
-                .read_packet(),
+            SnoopReader::new(BufReader::new(&h[..])).unwrap().read(),
             Err(SnoopError::OriginalLenExceeded)
         ));
     }
@@ -109,9 +107,7 @@ mod tests {
         h[23] = 0x00;
         h[24] = 0x00;
         assert!(matches!(
-            SnoopReader::new(BufReader::new(&h[..]))
-                .unwrap()
-                .read_packet(),
+            SnoopReader::new(BufReader::new(&h[..])).unwrap().read(),
             Err(SnoopError::CaptureLenExceeded)
         ));
     }
@@ -131,9 +127,7 @@ mod tests {
         h[23] = 0x00;
         h[24] = 0x00;
         assert!(matches!(
-            SnoopReader::new(BufReader::new(&h[..]))
-                .unwrap()
-                .read_packet(),
+            SnoopReader::new(BufReader::new(&h[..])).unwrap().read(),
             Err(SnoopError::InvalidRecordLength)
         ));
     }
@@ -143,5 +137,15 @@ mod tests {
         for i in SnoopReader::new(BufReader::new(HEADER)).unwrap() {
             assert_eq!(&HEADER[40..(HEADER.len() - 2)], &i.unwrap().data[..]);
         }
+    }
+
+    #[test]
+    fn test_small_buff() {
+        let mut r =  SnoopReader::new(BufReader::with_capacity(10,HEADER)).unwrap();
+        let i = r.read();
+        let packet = &i.unwrap();
+            eprintln!("{:#?}",&packet.data[..]);
+            assert_eq!(&HEADER[40..(HEADER.len() - 2)], &packet.data[..]);
+
     }
 }

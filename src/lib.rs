@@ -13,6 +13,9 @@ pub mod error;
 pub mod snoop;
 use crate::error::SnoopError;
 
+#[cfg(feature = "parser")]
+pub mod parser;
+
 #[cfg(feature = "reader")]
 pub mod reader;
 

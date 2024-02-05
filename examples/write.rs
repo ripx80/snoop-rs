@@ -29,7 +29,6 @@ fn main() {
         }
     };
     let mut writer = SnoopWriter::new(BufWriter::new(out), DataLinkType::Ethernet).unwrap();
-
     for i in SnoopReader::new(BufReader::new(fp)).unwrap() {
         let packet = i.unwrap();
         writer.write_packet(&packet).unwrap();

@@ -8,9 +8,10 @@ edition = "2021"
 [dependencies]
 
 [features]
-default = ["reader", "writer"] #todo
+default = ["reader", "writer", "parser"] # todo
 reader = []
 writer = []
+parser = []
 
 [profile.profiling]
 inherits = "release"
