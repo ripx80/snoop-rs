@@ -1,13 +1,13 @@
 extern crate snoop;
 
 use snoop::reader::SnoopReader;
-use std::fs::File;
 use std::fs;
+use std::fs::File;
 use std::io::BufReader;
 use std::time::Instant;
 
 /*
-cargo run --example bunch -- examples/
+cargo run --example bulk_buf -- snoop_files/
 */
 
 fn main() {
@@ -26,12 +26,11 @@ fn main() {
             }
         };
 
-        for i in SnoopReader::new(BufReader::new(fp)).unwrap() {
+        let mut sr = SnoopReader::new(BufReader::with_capacity(153600, fp)).unwrap();
+        while let Some(i) = sr.iter_ref() {
             cnt += 1;
             let _packet = i.unwrap();
         }
     }
-
-
-    println!("read packets: {} in {:?}", cnt,  start.elapsed());
+    println!("read packets: {} in {:?}", cnt, start.elapsed());
 }

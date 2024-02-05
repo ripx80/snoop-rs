@@ -29,11 +29,8 @@ where
     // internal only
     fn write_header(&mut self) -> Result<(), SnoopError> {
         self.header.version = 2;
-        //self.header.link_type = self.header.link_type;
         self.w.write(SNOOP_MAGIC).map_err(SnoopError::Io)?;
-        self.w
-            .write(SNOOP_VERSION)
-            .map_err(SnoopError::Io)?;
+        self.w.write(SNOOP_VERSION).map_err(SnoopError::Io)?;
         self.w
             .write(&u32::to_be_bytes(self.header.link_type as u32))
             .map_err(SnoopError::Io)?;

@@ -5,7 +5,8 @@ use crate::SnoopError;
 pub struct SnoopParser;
 
 impl SnoopParser {
-    pub fn parse_header(buf: &[u8] ) -> Result<SnoopHeader, SnoopError> { // buf: &[u8;24]
+    pub fn parse_header(buf: &[u8]) -> Result<SnoopHeader, SnoopError> {
+        // buf: &[u8;24]
         if &buf[0..8] != SNOOP_MAGIC {
             return Err(SnoopError::UnknownMagic);
         }
@@ -14,14 +15,15 @@ impl SnoopParser {
             return Err(SnoopError::UnknownVersion);
         }
         // unwrap is safe here
-        Ok(SnoopHeader{
-            version : u32::from_be_bytes(buf[8..12].try_into().unwrap()),
-            link_type : DataLinkType::try_from(u32::from_be_bytes(buf[12..16].try_into().unwrap())).unwrap()
+        Ok(SnoopHeader {
+            version: u32::from_be_bytes(buf[8..12].try_into().unwrap()),
+            link_type: DataLinkType::try_from(u32::from_be_bytes(buf[12..16].try_into().unwrap()))
+                .unwrap(),
         })
     }
 
     // change chapinfo to packet_header
-    pub fn parse_packet_header(buf: &[u8], ci: &mut CapInfo) -> Result<(), SnoopError> { //uf: &[u8; SNOOP_PACKET_HEADER_SIZE]
+    pub fn parse_packet_header(buf: &[u8], ci: &mut CapInfo) -> Result<(), SnoopError> {
         ci.original_length = u32::from_be_bytes(buf[0..4].try_into().unwrap());
         ci.included_length = u32::from_be_bytes(buf[4..8].try_into().unwrap());
         ci.packet_record_length = u32::from_be_bytes(buf[8..12].try_into().unwrap());
@@ -29,6 +31,7 @@ impl SnoopParser {
         ci.timestamp_seconds = u32::from_be_bytes(buf[16..20].try_into().unwrap());
         ci.timestamp_microseconds = u32::from_be_bytes(buf[20..24].try_into().unwrap());
 
+        // refactor: needed this checks?
         if ci.included_length > ci.original_length {
             return Err(SnoopError::OriginalLenExceeded);
         }
@@ -60,9 +63,8 @@ impl SnoopParser {
     pub fn pad(ci: &CapInfo) -> usize {
         (ci.packet_record_length - (24 + ci.included_length)) as usize
     }
-
+    // with pads
     pub fn data_len(ci: &CapInfo) -> usize {
         (ci.packet_record_length - 24) as usize
-       // (ci.included_length as usize) + SnoopParser::pad(ci)
     }
 }

@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 
 /*
-cargo run --example write -- examples/fw1_mon2018.cap
+cargo run --example write -- snoop_file.cap
 */
 fn main() {
     let fp = match File::open(

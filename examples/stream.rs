@@ -1,13 +1,12 @@
 extern crate snoop;
-
 use snoop::reader::SnoopReader;
 use std::fs::File;
 use std::io::BufReader;
+use std::time::Duration;
 
 /*
-cargo run --example read -- snoop_file.cap
+cargo run --example stream -- snoop_file.cap
 */
-
 fn main() {
     let fp = match File::open(
         std::env::args()
@@ -20,15 +19,13 @@ fn main() {
             return;
         }
     };
-    let mut cnt = 0u32;
-    for i in SnoopReader::new(BufReader::new(fp)).unwrap() {
-        cnt += 1;
-        let packet = i.unwrap();
-        println!(
-            "packet: {}\n{:#?}\ndata: {:x?}\n",
-            cnt,
-            &packet.ci,
-            &packet.data[..]
-        );
-    }
+
+    let mut stream = SnoopReader::new(BufReader::new(fp)).unwrap();
+    let time = Duration::from_millis(10000);
+    let stream = stream.read_stream(time).unwrap();
+    println!(
+        "read stream packet: \n{:#?}\ndata: {:x?}\n",
+        &stream.ci,
+        &stream.data[..]
+    );
 }

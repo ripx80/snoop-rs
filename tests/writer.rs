@@ -14,7 +14,7 @@ mod tests {
     use std::io::BufReader;
 
     #[test]
-    fn test_write_header() {
+    fn writer_header() {
         let mut buf = [0u8; 16];
         {
             let ptr = &mut buf[..];
@@ -25,7 +25,7 @@ mod tests {
         SnoopReader::new(BufReader::new(&buf[..])).unwrap();
     }
     #[test]
-    fn test_write_packet() {
+    fn writer_packet() {
         let mut buf = [0u8; 84];
         {
             let ptr = &mut buf[..];
@@ -40,7 +40,7 @@ mod tests {
     }
 
     #[test]
-    fn test_write_invalid_ci() {
+    fn writer_invalid_ci() {
         let mut buf = [0u8; 84];
         let ptr = &mut buf[..];
         let mut writer = SnoopWriter::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
@@ -68,7 +68,7 @@ mod tests {
     }
 
     #[test]
-    fn test_write() {
+    fn writer() {
         let mut buf = [0u8; 84];
         {
             let ptr = &mut buf[..];
