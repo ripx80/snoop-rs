@@ -37,38 +37,38 @@ where
         Ok(())
     }
     // internal only
-    fn write_packet_header(&mut self, ci: &CapInfo) -> Result<(), SnoopError> {
-        if ci.included_length > ci.original_length {
+    fn write_packet_header(&mut self, ph: &PacketHeader) -> Result<(), SnoopError> {
+        if ph.included_length > ph.original_length {
             return Err(SnoopError::OriginalLenExceeded);
         }
 
-        if ci.included_length > MAX_CAPTURE_LEN {
+        if ph.included_length > MAX_CAPTURE_LEN {
             return Err(SnoopError::CaptureLenExceeded);
         }
 
-        if ci.packet_record_length < (24 + ci.original_length) {
+        if ph.packet_record_length < (24 + ph.original_length) {
             return Err(SnoopError::InvalidRecordLength);
         }
 
         self.w
-            .write(&ci.original_length.to_be_bytes())
+            .write(&ph.original_length.to_be_bytes())
             .map_err(SnoopError::Io)?;
         self.w
-            .write(&ci.included_length.to_be_bytes())
+            .write(&ph.included_length.to_be_bytes())
             .map_err(SnoopError::Io)?;
         self.w
-            .write(&ci.packet_record_length.to_be_bytes())
+            .write(&ph.packet_record_length.to_be_bytes())
             .map_err(SnoopError::Io)?;
         self.w
-            .write(&ci.cumulative_drops.to_be_bytes())
+            .write(&ph.cumulative_drops.to_be_bytes())
             .map_err(SnoopError::Io)?;
         self.w
-            .write(&ci.timestamp_seconds.to_be_bytes())
+            .write(&ph.timestamp_seconds.to_be_bytes())
             .map_err(SnoopError::Io)?;
         self.w
-            .write(&ci.timestamp_microseconds.to_be_bytes())
+            .write(&ph.timestamp_microseconds.to_be_bytes())
             .map_err(SnoopError::Io)?;
-        self.pad = ci.packet_record_length - (24 + ci.original_length);
+        self.pad = ph.packet_record_length - (24 + ph.original_length);
         Ok(())
     }
     pub fn write_data(&mut self, data: &[u8]) -> Result<(), SnoopError> {
@@ -90,7 +90,7 @@ where
     // add SnoopPacketRef writer
     // write packet data to writer, will add padding
     pub fn write_packet(&mut self, packet: &SnoopPacket) -> Result<(), SnoopError> {
-        self.write_packet_header(&packet.ci)?;
+        self.write_packet_header(&packet.header)?;
         self.write_data(&packet.data)?;
         Ok(())
     }
@@ -100,18 +100,18 @@ where
             .duration_since(UNIX_EPOCH)
             .map_err(SnoopError::Time)?;
         let mut packet = SnoopPacket {
-            ci: CapInfo {
+            header: PacketHeader {
                 ..Default::default()
             },
             data,
         };
 
-        packet.ci.original_length = packet.data.len().try_into().unwrap();
-        packet.ci.included_length = packet.ci.original_length; // not truncated
-        packet.ci.packet_record_length = packet.ci.original_length + 24; // no pads
-        packet.ci.cumulative_drops = 0;
-        packet.ci.timestamp_seconds = time.as_secs().try_into().unwrap(); // will be supported to 2038 :-)
-        packet.ci.timestamp_microseconds = time.subsec_micros();
+        packet.header.original_length = packet.data.len().try_into().unwrap();
+        packet.header.included_length = packet.header.original_length; // not truncated
+        packet.header.packet_record_length = packet.header.original_length + 24; // no pads
+        packet.header.cumulative_drops = 0;
+        packet.header.timestamp_seconds = time.as_secs().try_into().unwrap(); // will be supported to 2038 :-)
+        packet.header.timestamp_microseconds = time.subsec_micros();
         self.write_packet(&packet)
     }
 }

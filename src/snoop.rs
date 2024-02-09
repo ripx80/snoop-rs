@@ -54,7 +54,7 @@ pub struct SnoopHeader {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct CapInfo {
+pub struct PacketHeader {
     pub original_length: u32,        // 	OriginalLength        uint32	4
     pub included_length: u32,        // 	IncludedLength        uint32	8
     pub packet_record_length: u32,   // 	PacketRecordLength    uint32	12
@@ -64,11 +64,11 @@ pub struct CapInfo {
 }
 
 pub struct SnoopPacket {
-    pub ci: CapInfo,
+    pub header: PacketHeader,
     pub data: Vec<u8>,
 }
 
 pub struct SnoopPacketRef<'a> {
-    pub ci: &'a CapInfo,
+    pub header: &'a PacketHeader,
     pub data: &'a [u8],
 }

@@ -8,7 +8,7 @@ use std::{thread, time};
 pub struct SnoopReader<R> {
     r: R,
     header: SnoopHeader,
-    ci: CapInfo,
+    ph: PacketHeader,
     buf: Vec<u8>,
 }
 
@@ -22,7 +22,7 @@ where
             header: SnoopHeader {
                 ..Default::default()
             },
-            ci: CapInfo {
+            ph: PacketHeader {
                 ..Default::default()
             },
             buf: vec![0u8; (MAX_CAPTURE_LEN + MAX_CAPTURE_PADS) as usize],
@@ -86,19 +86,19 @@ where
 
     pub fn read_ref(&mut self) -> Result<SnoopPacketRef, SnoopError> {
         self.read_exact(0, SNOOP_PACKET_HEADER_SIZE)?;
-        SnoopParser::parse_packet_header(&self.buf[..SNOOP_PACKET_HEADER_SIZE], &mut self.ci)?;
+        SnoopParser::parse_packet_header(&self.buf[..SNOOP_PACKET_HEADER_SIZE], &mut self.ph)?;
 
-        self.read_exact(0, SnoopParser::data_len(&self.ci))?;
+        self.read_exact(0, SnoopParser::data_len(&self.ph))?;
         Ok(SnoopPacketRef {
-            ci: &self.ci,
-            data: &self.buf[..usize::try_from(self.ci.included_length).unwrap()],
+            header: &self.ph,
+            data: &self.buf[..usize::try_from(self.ph.included_length).unwrap()],
         })
     }
 
     pub fn read(&mut self) -> Result<SnoopPacket, SnoopError> {
         let pr = self.read_ref()?;
         Ok(SnoopPacket {
-            ci: pr.ci.clone(),
+            header: pr.header.clone(),
             data: pr.data.to_vec(),
         })
     }
@@ -106,13 +106,13 @@ where
     // if the R is not fully written this function blocks until new bytes
     pub fn read_stream(&mut self, time: time::Duration) -> Result<SnoopPacketRef, SnoopError> {
         self.read_until(SNOOP_PACKET_HEADER_SIZE, time)?;
-        SnoopParser::parse_packet_header(&self.buf[..SNOOP_PACKET_HEADER_SIZE], &mut self.ci)?;
+        SnoopParser::parse_packet_header(&self.buf[..SNOOP_PACKET_HEADER_SIZE], &mut self.ph)?;
 
-        self.read_until(SnoopParser::data_len(&self.ci), time)?;
+        self.read_until(SnoopParser::data_len(&self.ph), time)?;
 
         Ok(SnoopPacketRef {
-            ci: &self.ci,
-            data: &self.buf[..usize::try_from(self.ci.included_length).unwrap()],
+            header: &self.ph,
+            data: &self.buf[..usize::try_from(self.ph.included_length).unwrap()],
         })
     }
 

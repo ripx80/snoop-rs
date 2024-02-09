@@ -27,7 +27,7 @@ fn main() {
         println!(
             "packet: {}\n{:#?}\ndata: {:x?}\n",
             cnt,
-            &packet.ci,
+            &packet.header,
             &packet.data[..]
         );
     }

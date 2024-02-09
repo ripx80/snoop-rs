@@ -4,7 +4,7 @@ mod common;
 mod tests {
     use crate::common::HEADER;
     use snoop::error::SnoopError;
-    use snoop::snoop::CapInfo;
+    use snoop::snoop::PacketHeader;
     use snoop::snoop::DataLinkType;
     use snoop::snoop::SnoopPacket;
     use snoop::writer::SnoopWriter;
@@ -45,25 +45,25 @@ mod tests {
         let ptr = &mut buf[..];
         let mut writer = SnoopWriter::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
         let mut packet = SnoopPacket {
-            ci: CapInfo {
+            header: PacketHeader {
                 ..Default::default()
             },
             data: vec![0u8; 40],
         };
-        //packet.ci.pad = 5;
+        //packet.header.pad = 5;
         assert!(matches!(
             writer.write_packet(&packet),
             Err(SnoopError::InvalidRecordLength)
         ));
-        packet.ci.original_length = 42;
-        packet.ci.included_length = 42;
-        packet.ci.packet_record_length = 71; // 5 pads, one more then supported
+        packet.header.original_length = 42;
+        packet.header.included_length = 42;
+        packet.header.packet_record_length = 71; // 5 pads, one more then supported
         assert!(matches!(
             writer.write_packet(&packet),
             Err(SnoopError::InvalidPadLen)
         ));
 
-        packet.ci.packet_record_length = 68; // 2 pads
+        packet.header.packet_record_length = 68; // 2 pads
         writer.write_packet(&packet).unwrap();
     }
 
@@ -78,10 +78,10 @@ mod tests {
         }
         let mut reader = SnoopReader::new(BufReader::new(&buf[..])).unwrap();
         let packet = reader.read().unwrap();
-        assert_eq!(packet.ci.original_length, 44);
-        assert_eq!(packet.ci.included_length, 44);
-        assert_eq!(packet.ci.packet_record_length, 68);
-        assert_eq!(packet.ci.cumulative_drops, 0);
+        assert_eq!(packet.header.original_length, 44);
+        assert_eq!(packet.header.included_length, 44);
+        assert_eq!(packet.header.packet_record_length, 68);
+        assert_eq!(packet.header.cumulative_drops, 0);
         assert_eq!(&packet.data, &HEADER[40..]);
     }
 }

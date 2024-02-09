@@ -25,7 +25,7 @@ fn main() {
     let stream = stream.read_stream(time).unwrap();
     println!(
         "read stream packet: \n{:#?}\ndata: {:x?}\n",
-        &stream.ci,
+        &stream.header,
         &stream.data[..]
     );
 }

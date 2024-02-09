@@ -23,48 +23,47 @@ impl SnoopParser {
     }
 
     // change chapinfo to packet_header
-    pub fn parse_packet_header(buf: &[u8], ci: &mut CapInfo) -> Result<(), SnoopError> {
-        ci.original_length = u32::from_be_bytes(buf[0..4].try_into().unwrap());
-        ci.included_length = u32::from_be_bytes(buf[4..8].try_into().unwrap());
-        ci.packet_record_length = u32::from_be_bytes(buf[8..12].try_into().unwrap());
-        ci.cumulative_drops = u32::from_be_bytes(buf[12..16].try_into().unwrap());
-        ci.timestamp_seconds = u32::from_be_bytes(buf[16..20].try_into().unwrap());
-        ci.timestamp_microseconds = u32::from_be_bytes(buf[20..24].try_into().unwrap());
+    pub fn parse_packet_header(buf: &[u8], ph: &mut PacketHeader) -> Result<(), SnoopError> {
+        ph.original_length = u32::from_be_bytes(buf[0..4].try_into().unwrap());
+        ph.included_length = u32::from_be_bytes(buf[4..8].try_into().unwrap());
+        ph.packet_record_length = u32::from_be_bytes(buf[8..12].try_into().unwrap());
+        ph.cumulative_drops = u32::from_be_bytes(buf[12..16].try_into().unwrap());
+        ph.timestamp_seconds = u32::from_be_bytes(buf[16..20].try_into().unwrap());
+        ph.timestamp_microseconds = u32::from_be_bytes(buf[20..24].try_into().unwrap());
 
-        // refactor: needed this checks?
-        if ci.included_length > ci.original_length {
+        if ph.included_length > ph.original_length {
             return Err(SnoopError::OriginalLenExceeded);
         }
 
-        if ci.included_length > MAX_CAPTURE_LEN {
+        if ph.included_length > MAX_CAPTURE_LEN {
             return Err(SnoopError::CaptureLenExceeded);
         }
 
-        if ci.packet_record_length < (SNOOP_PACKET_HEADER_SIZE as u32 + ci.original_length) {
+        if ph.packet_record_length < (SNOOP_PACKET_HEADER_SIZE as u32 + ph.original_length) {
             return Err(SnoopError::InvalidRecordLength);
         }
         Ok(())
     }
 
     // needed only for buf data?
-    // pub fn parse_packe<'a>(buf: &'a [u8], ci: &'a mut CapInfo)-> Result<(u32, &'a [u8]), SnoopError> {
+    // pub fn parse_packe<'a>(buf: &'a [u8], ph: &'a mut PacketHeader)-> Result<(u32, &'a [u8]), SnoopError> {
     //     // if buf.len() < SNOOP_PACKET_HEADER_SIZE {
     //     //     return Err(SnoopError::InvalidPacketHeader);
     //     // }
     //     SnoopParser::parse_packet_header(buf[..SNOOP_PACKET_HEADER_SIZE].try_into().unwrap(), ci)?;
-    //     let bytes: u32 = 24 + ci.included_length + (ci.packet_record_length - (24 + ci.original_length));
+    //     let bytes: u32 = 24 + ph.included_length + (ph.packet_record_length - (24 + ph.original_length));
 
     //     if buf.len() < bytes.try_into().unwrap(){
     //         return Err(SnoopError::InvalidPacketSize);
     //     }
-    //     Ok((bytes, &buf[SNOOP_PACKET_HEADER_SIZE..(usize::try_from(ci.included_length).unwrap())]))
+    //     Ok((bytes, &buf[SNOOP_PACKET_HEADER_SIZE..(usize::try_from(ph.included_length).unwrap())]))
     // }
 
-    pub fn pad(ci: &CapInfo) -> usize {
-        (ci.packet_record_length - (24 + ci.included_length)) as usize
+    pub fn pad(ph: &PacketHeader) -> usize {
+        (ph.packet_record_length - (SNOOP_PACKET_HEADER_SIZE as u32 + ph.included_length)) as usize
     }
     // with pads
-    pub fn data_len(ci: &CapInfo) -> usize {
-        (ci.packet_record_length - 24) as usize
+    pub fn data_len(ph: &PacketHeader) -> usize {
+        (ph.packet_record_length - SNOOP_PACKET_HEADER_SIZE as u32) as usize
     }
 }

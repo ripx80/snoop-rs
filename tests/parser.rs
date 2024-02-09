@@ -5,7 +5,7 @@ mod tests {
     use crate::common::HEADER;
     use snoop::error::SnoopError;
     use snoop::parser::SnoopParser;
-    use snoop::snoop::CapInfo;
+    use snoop::snoop::PacketHeader;
     use snoop::snoop::DataLinkType;
 
     #[test]
@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     fn parser_packet_header_ci() {
-        let mut p = CapInfo {
+        let mut p = PacketHeader {
             ..Default::default()
         };
         SnoopParser::parse_packet_header(&HEADER[16..], &mut p).unwrap();
@@ -78,7 +78,7 @@ mod tests {
         h[6] = 0xFF;
         h[7] = 0xFF;
         println!("{:#?}", &h[..]);
-        let mut p = CapInfo {
+        let mut p = PacketHeader {
             ..Default::default()
         };
         assert!(matches!(
@@ -101,7 +101,7 @@ mod tests {
         h[22] = 0x00;
         h[23] = 0x00;
         h[24] = 0x00;
-        let mut p = CapInfo {
+        let mut p = PacketHeader {
             ..Default::default()
         };
         assert!(matches!(
@@ -125,7 +125,7 @@ mod tests {
         h[22] = 0x10;
         h[23] = 0x00;
         h[24] = 0x00;
-        let mut p = CapInfo {
+        let mut p = PacketHeader {
             ..Default::default()
         };
         assert!(matches!(
