@@ -1,18 +1,40 @@
 [package]
 name = "snoop"
-version = "1.0.0"
 edition = "2021"
+version = "1.0.0"
+authors = ["ripx80"]
+description = "snoop packet format parser reader and writer"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+documentation = "https://docs.rs/pcap-file/"
+repository = "https://github.com/ripx80/snoop"
+readme = "README.md"
+keywords = ["packet", "snoop", "parse", "read", "write"]
+categories = ["encoding", "parsing"]
+
+exclude = ["tests", "examples", "flake.nix", "flake.lock"]
 
 [dependencies]
 
 [features]
-default = ["reader", "writer", "parser"] # todo
+default = ["parser"]
+full = ["reader", "writer", "parser"]
 reader = []
 writer = []
 parser = []
 
+[profile.release]
+strip = "debuginfo"
+
 [profile.profiling]
 inherits = "release"
 debug = true
+
+[profile.dev]
+debug = 0
+strip = "debuginfo"
+incremental = true
+
+[[example]]
+name = "read"
+required-features = ["parser", "reader"]
