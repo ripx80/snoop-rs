@@ -30,8 +30,13 @@
             eza
             fd
             rust-bin.beta.latest.default
+            # profiling
             samply
             hyperfine
+            # github workflows tests
+            #act
+            #qemu
+            #podman
           ];
 
           shellHook = ''
@@ -40,6 +45,5 @@
           '';
         };
         });
-
       };
 }

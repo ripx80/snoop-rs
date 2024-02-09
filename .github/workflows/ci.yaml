@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule: [cron: "40 1 * * *"]
+
+permissions:
+  contents: read
+
+env:
+  RUSTFLAGS: -Dwarnings
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+        - uses: actions/checkout@v4
+        - uses: dtolnay/rust-toolchain@nightly
+        - run: cd test_suite && cargo test --features full
+
+  # windows:
+  #   name: Test suite (windows)
+  #   runs-on: windows-latest
+  #   timeout-minutes: 45
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@nightly
+  #     - run: cd test_suite && cargo test --features full
+
+  # stable:
+  #   name: Rust ${{matrix.rust}}
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       rust: [stable, beta]
+  #   timeout-minutes: 45
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: ${{matrix.rust}}
+  #     - run: cd snoop && cargo build --features full
+  #     - run: cd snoop && cargo build --no-default-features
+
+  # nightly:
+  #   name: Rust nightly ${{matrix.os == 'windows' && '(windows)' || ''}}
+  #   runs-on: ${{matrix.os}}-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu, windows]
+  #   timeout-minutes: 45
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@nightly
+  #     - run: cd snoop && cargo build
+  #     - run: cd snoop && cargo build --no-default-features
+  #     - run: cd snoop && cargo build --no-default-features --features parser
+  #     - run: cd snoop && cargo build --no-default-features --features reader
+  #     - run: cd snoop && cargo build --no-default-features --features writer
+  #     - run: cd snoop && cargo test --features full
+
+  # doc:
+  #   name: Documentation
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 45
+  #   env:
+  #     RUSTDOCFLAGS: -Dwarnings
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@nightly
+  #     - uses: dtolnay/install@cargo-docs-rs
+  #     - run: cargo docs-rs -p snoop
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@clippy
+      - run: cd snoop && cargo clippy --features full -- -Dclippy::all -Dclippy::pedantic
+
+  # miri:
+  #   name: Miri
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 45
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@miri
+  #     - run: cargo miri setup
+  #     - run: cd snoop && cargo miri test --features full
+  #       env:
+  #         MIRIFLAGS: -Zmiri-strict-provenance
+
+  # lints:
+  #   name: Lints
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v2
+
+  #     - name: Install nightly toolchain
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: nightly
+  #         override: true
+  #         components: rustfmt, clippy
+
+  #     - name: Run cargo fmt
+  #       uses: actions-rs/cargo@v1
+  #       continue-on-error: true # WARNING: only for this example, remove it!
+  #       with:
+  #         command: fmt
+  #         args: --all -- --check
+
+  #     - name: Run cargo clippy
+  #       uses: actions-rs/cargo@v1
+  #       continue-on-error: true # WARNING: only for this example, remove it!
+  #       with:
+  #         command: clippy
+  #         args: -- -D warnings
