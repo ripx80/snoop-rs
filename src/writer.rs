@@ -1,4 +1,4 @@
-use crate::snoop::*;
+use crate::format::*;
 use crate::SnoopError;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};

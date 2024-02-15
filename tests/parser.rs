@@ -5,8 +5,8 @@ mod tests {
     use crate::common::HEADER;
     use snoop::error::SnoopError;
     use snoop::parser::SnoopParser;
-    use snoop::snoop::DataLinkType;
-    use snoop::snoop::PacketHeader;
+    use snoop::format::DataLinkType;
+    use snoop::format::PacketHeader;
 
     #[test]
     fn parser_header() {

@@ -4,9 +4,9 @@ mod common;
 mod tests {
     use crate::common::HEADER;
     use snoop::error::SnoopError;
-    use snoop::snoop::DataLinkType;
-    use snoop::snoop::PacketHeader;
-    use snoop::snoop::SnoopPacket;
+    use snoop::format::DataLinkType;
+    use snoop::format::PacketHeader;
+    use snoop::format::SnoopPacket;
     use snoop::writer::SnoopWriter;
     use std::io::BufWriter;
 

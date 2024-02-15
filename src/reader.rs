@@ -1,5 +1,5 @@
 use crate::parser::SnoopParser;
-use crate::snoop::*;
+use crate::format::*;
 use crate::SnoopError;
 use std::io::Read;
 use std::{thread, time};
