@@ -12,7 +12,7 @@ pub const MAX_CAPTURE_LEN: u32 = 4096;
 pub const MAX_CAPTURE_PADS: u32 = 4;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Default, PartialEq, Copy, Clone)] // realy need Copy, Clone here
+#[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub enum DataLinkType {
     IEEE8023,
     TokenBus,

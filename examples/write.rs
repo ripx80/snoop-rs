@@ -1,7 +1,7 @@
 extern crate snoop;
 
-use snoop::reader::SnoopReader;
 use snoop::format::DataLinkType;
+use snoop::reader::SnoopReader;
 use snoop::writer::SnoopWriter;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};

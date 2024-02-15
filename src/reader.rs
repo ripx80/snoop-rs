@@ -1,5 +1,5 @@
-use crate::parser::SnoopParser;
 use crate::format::*;
+use crate::parser::SnoopParser;
 use crate::SnoopError;
 use std::io::Read;
 use std::{thread, time};
@@ -37,7 +37,8 @@ where
 
     fn read_header(&mut self) -> Result<(), SnoopError> {
         self.read_exact(0, SNOOP_HEADER_SIZE)?;
-        self.header = SnoopParser::parse_header(&self.buf[0..SNOOP_HEADER_SIZE])?;
+        self.header =
+            SnoopParser::parse_header(&self.buf[0..SNOOP_HEADER_SIZE].try_into().unwrap())?;
         Ok(())
     }
 
@@ -57,7 +58,7 @@ where
         }
         if !buf.is_empty() {
             if bytes == 0 {
-                return Err(SnoopError::Eof); // change name
+                return Err(SnoopError::Eof);
             }
             return Err(SnoopError::UnexpectedEof(bytes));
         }
@@ -86,7 +87,10 @@ where
 
     pub fn read_ref(&mut self) -> Result<SnoopPacketRef, SnoopError> {
         self.read_exact(0, SNOOP_PACKET_HEADER_SIZE)?;
-        SnoopParser::parse_packet_header(&self.buf[..SNOOP_PACKET_HEADER_SIZE], &mut self.ph)?;
+        SnoopParser::parse_packet_header(
+            &self.buf[..SNOOP_PACKET_HEADER_SIZE].try_into().unwrap(),
+            &mut self.ph,
+        )?;
 
         self.read_exact(0, SnoopParser::data_len(&self.ph))?;
         Ok(SnoopPacketRef {
@@ -106,7 +110,10 @@ where
     // if the R is not fully written this function blocks until new bytes
     pub fn read_stream(&mut self, time: time::Duration) -> Result<SnoopPacketRef, SnoopError> {
         self.read_until(SNOOP_PACKET_HEADER_SIZE, time)?;
-        SnoopParser::parse_packet_header(&self.buf[..SNOOP_PACKET_HEADER_SIZE], &mut self.ph)?;
+        SnoopParser::parse_packet_header(
+            &self.buf[..SNOOP_PACKET_HEADER_SIZE].try_into().unwrap(),
+            &mut self.ph,
+        )?;
 
         self.read_until(SnoopParser::data_len(&self.ph), time)?;
 
