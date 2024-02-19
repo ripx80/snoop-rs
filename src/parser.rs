@@ -37,7 +37,7 @@ impl Parser {
     /// each captured packet has a packet header.
     /// # Errors
     /// will return [`Error::OriginalLenExceeded`] if the maximium original len is exceeded.
-    /// will return [`Error::CaptureLenExeeded`] if the supported capture len is exceeded.
+    /// will return [`Error::CaptureLenExceeded`] if the supported capture len is exceeded.
     /// will return [`Error::InvalidRecordLength`] if the record length is invalid
     #[allow(clippy::missing_panics_doc)]
     #[allow(clippy::cast_possible_truncation)]
