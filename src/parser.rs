@@ -1,10 +1,16 @@
+//! parse snoop headers and calculate data len and pads.
+
 use crate::format::*;
 use crate::SnoopError;
 
+/// parse bytes as snoop format
 #[derive(Debug)]
 pub struct SnoopParser;
 
 impl SnoopParser {
+    /// parse the snoop file format header.
+    /// each snoop file has one snoop header as the begining of the file.
+    /// look for snoop magic bytes and return [SnoopHeader].
     pub fn parse_header(buf: &[u8; SNOOP_HEADER_SIZE]) -> Result<SnoopHeader, SnoopError> {
         if &buf[0..8] != SNOOP_MAGIC {
             return Err(SnoopError::UnknownMagic);
@@ -21,6 +27,8 @@ impl SnoopParser {
         })
     }
 
+    /// parse the snoop packet header and return captured information as [PacketHeader].
+    /// each captured packet has a packet header.
     pub fn parse_packet_header(
         buf: &[u8; SNOOP_PACKET_HEADER_SIZE],
         ph: &mut PacketHeader,
@@ -46,10 +54,13 @@ impl SnoopParser {
         Ok(())
     }
 
+    /// calculate how many pad bytes are append to the packet data.
     pub fn pad(ph: &PacketHeader) -> usize {
         (ph.packet_record_length - (SNOOP_PACKET_HEADER_SIZE as u32 + ph.included_length)) as usize
     }
-    // with pads
+
+    /// calculate the data len with pads included.
+    /// pads must be stripped at the end of data bytes.
     pub fn data_len(ph: &PacketHeader) -> usize {
         (ph.packet_record_length - SNOOP_PACKET_HEADER_SIZE as u32) as usize
     }

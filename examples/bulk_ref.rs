@@ -6,10 +6,10 @@ use std::fs::File;
 use std::io::BufReader;
 use std::time::Instant;
 
-/*
-cargo run --example bunch_ref -- snoop_files/
-*/
-
+/// cargo run --example bunch_ref -- snoop_files/
+///
+/// read a bulk of files in snoop_files as a reference.
+/// this will speed up the reading process but the underlying buffer will be overwritten by calling read.
 fn main() {
     let start = Instant::now();
     let paths = fs::read_dir(std::env::args().nth(1).unwrap()).expect("no path given");

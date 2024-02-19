@@ -6,9 +6,10 @@ use snoop::writer::SnoopWriter;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 
-/*
-cargo run --example write -- snoop_file.cap
-*/
+/// cargo run --example write -- snoop_file.cap
+///
+/// write a single snoop file out.cap from input of the first argument.
+/// this is like a copy of the input file.
 fn main() {
     let fp = match File::open(
         std::env::args()
@@ -32,10 +33,5 @@ fn main() {
     for i in SnoopReader::new(BufReader::new(fp)).unwrap() {
         let packet = i.unwrap();
         writer.write_packet(&packet).unwrap();
-        // println!(
-        //     "write packet: \n{:#?}\ndata: {:x?}\n",
-        //     &packet.ci,
-        //     &packet.data[..]
-        // );
     }
 }

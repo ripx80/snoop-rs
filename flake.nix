@@ -33,16 +33,21 @@
             # profiling
             samply
             hyperfine
-            # github workflows tests
-            #act
-            #qemu
-            #podman
+
+
           ];
 
           shellHook = ''
             alias ls=eza
             alias find=fd
           '';
+        };
+        ci = pkgs.mkShell {
+            buildInputs = with pkgs; [
+                act
+                qemu
+                podman
+            ];
         };
         });
       };

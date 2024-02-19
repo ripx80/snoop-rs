@@ -4,10 +4,9 @@ use snoop::reader::SnoopReader;
 use std::fs::File;
 use std::io::BufReader;
 
-/*
-cargo run --example read -- snoop_file.cap
-*/
-
+/// cargo run --example read -- snoop_file.cap
+///
+/// read a single snoop file and get a copy of the data
 fn main() {
     let fp = match File::open(
         std::env::args()

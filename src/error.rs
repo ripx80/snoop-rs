@@ -1,3 +1,5 @@
+//! custom errors that can happen using snoop.
+
 use std::error;
 use std::fmt;
 use std::io;
@@ -13,17 +15,28 @@ const INVALID_PAD_LENGTH: &str =
 const EOF: &str = "end of file";
 const UNEXEOF: &str = "unexpected end of file";
 
+/// Errors that can happen inside snoop.
 #[derive(Debug)]
 pub enum SnoopError {
+    /// no valid snoop magic bytes found.
     UnknownMagic,
+    /// no valid suppordetd snoop file format version found.
     UnknownVersion,
+    /// the len of original packet len exceeded.
     OriginalLenExceeded,
+    /// the supported capture len exceeded.
     CaptureLenExceeded,
+    /// the record len is invalid.
     InvalidRecordLength,
+    /// pad len is invalid or not supported
     InvalidPadLen,
+    /// valid end of file appear
     Eof,
+    /// unexpected end of file
     UnexpectedEof(usize),
+    /// some underlying io error occur, wrapped
     Io(io::Error),
+    /// wrapped time error
     Time(time::SystemTimeError),
 }
 

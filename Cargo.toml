@@ -18,12 +18,13 @@ exclude = ["tests", "examples", "flake.nix", "flake.lock"]
 
 [features]
 default = ["parser"]
-full = ["reader", "writer", "parser"]
+full = ["reader", "writer"]
 reader = []
 writer = []
 parser = []
 
 [profile.release]
+panic = 'abort'
 strip = "debuginfo"
 
 [profile.profiling]
@@ -37,4 +38,24 @@ incremental = true
 
 [[example]]
 name = "read"
-required-features = ["parser", "reader"]
+required-features = ["reader"]
+
+[[example]]
+name = "write"
+required-features = ["reader", "writer"]
+
+[[example]]
+name = "stream"
+required-features = ["reader"]
+
+[[example]]
+name = "bulk"
+required-features = ["reader"]
+
+[[example]]
+name = "bulk_ref"
+required-features = ["reader"]
+
+[[example]]
+name = "bulk_buf"
+required-features = ["reader"]

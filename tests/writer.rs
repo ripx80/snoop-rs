@@ -19,7 +19,6 @@ mod tests {
         {
             let ptr = &mut buf[..];
             SnoopWriter::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
-            //let _ = w.w.flush(); // when close flush, maybe a defer func in writer not in test
         }
         assert_eq!(HEADER[0..16], buf[..]);
         SnoopReader::new(BufReader::new(&buf[..])).unwrap();
@@ -50,7 +49,6 @@ mod tests {
             },
             data: vec![0u8; 40],
         };
-        //packet.header.pad = 5;
         assert!(matches!(
             writer.write_packet(&packet),
             Err(SnoopError::InvalidRecordLength)

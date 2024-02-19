@@ -6,10 +6,9 @@ use std::fs::File;
 use std::io::BufReader;
 use std::time::Instant;
 
-/*
-cargo run --example bulk -- snoop_files/
-*/
-
+/// cargo run --example bulk -- snoop_files/
+///
+/// read a bulk of files in snoop_files and get a copy of this data
 fn main() {
     let start = Instant::now();
     let paths = fs::read_dir(std::env::args().nth(1).unwrap()).expect("no path given");

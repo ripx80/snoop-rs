@@ -4,9 +4,10 @@ use std::fs::File;
 use std::io::BufReader;
 use std::time::Duration;
 
-/*
-cargo run --example stream -- snoop_file.cap
-*/
+/// cargo run --example stream -- snoop_file.cap
+///
+/// read a from a file that is not be fully written as a stream
+/// this will block until the file get a normal EOF
 fn main() {
     let fp = match File::open(
         std::env::args()

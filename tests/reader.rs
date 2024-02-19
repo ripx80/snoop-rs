@@ -12,7 +12,6 @@ mod tests {
         SnoopReader::new(BufReader::new(HEADER)).unwrap();
     }
 
-    // this will panic in parser
     #[test]
     fn reader_header_invalid_short() {
         assert!(matches!(
@@ -33,7 +32,6 @@ mod tests {
         let mut r = SnoopReader::new(BufReader::with_capacity(10, HEADER)).unwrap();
         let i = r.read();
         let packet = &i.unwrap();
-        eprintln!("{:#?}", &packet.data[..]);
         assert_eq!(&HEADER[40..(HEADER.len() - 2)], &packet.data[..]);
     }
 }
