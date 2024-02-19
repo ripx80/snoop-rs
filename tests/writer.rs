@@ -3,14 +3,14 @@ mod common;
 #[cfg(test)]
 mod tests {
     use crate::common::HEADER;
-    use snoop::error::SnoopError;
+    use snoop::error::Error;
     use snoop::format::DataLinkType;
     use snoop::format::PacketHeader;
     use snoop::format::SnoopPacket;
-    use snoop::writer::SnoopWriter;
+    use snoop::writer::Writer;
     use std::io::BufWriter;
 
-    use snoop::reader::SnoopReader;
+    use snoop::reader::Reader;
     use std::io::BufReader;
 
     #[test]
@@ -18,19 +18,19 @@ mod tests {
         let mut buf = [0u8; 16];
         {
             let ptr = &mut buf[..];
-            SnoopWriter::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
+            Writer::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
         }
         assert_eq!(HEADER[0..16], buf[..]);
-        SnoopReader::new(BufReader::new(&buf[..])).unwrap();
+        Reader::new(BufReader::new(&buf[..])).unwrap();
     }
     #[test]
     fn writer_packet() {
         let mut buf = [0u8; 84];
         {
             let ptr = &mut buf[..];
-            let mut writer = SnoopWriter::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
+            let mut writer = Writer::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
 
-            for i in SnoopReader::new(BufReader::new(HEADER)).unwrap() {
+            for i in Reader::new(BufReader::new(HEADER)).unwrap() {
                 let packet = i.unwrap();
                 writer.write_packet(&packet).unwrap();
             }
@@ -42,7 +42,7 @@ mod tests {
     fn writer_invalid_ci() {
         let mut buf = [0u8; 84];
         let ptr = &mut buf[..];
-        let mut writer = SnoopWriter::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
+        let mut writer = Writer::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
         let mut packet = SnoopPacket {
             header: PacketHeader {
                 ..Default::default()
@@ -51,14 +51,14 @@ mod tests {
         };
         assert!(matches!(
             writer.write_packet(&packet),
-            Err(SnoopError::InvalidRecordLength)
+            Err(Error::InvalidRecordLength)
         ));
         packet.header.original_length = 42;
         packet.header.included_length = 42;
         packet.header.packet_record_length = 71; // 5 pads, one more then supported
         assert!(matches!(
             writer.write_packet(&packet),
-            Err(SnoopError::InvalidPadLen)
+            Err(Error::InvalidPadLen)
         ));
 
         packet.header.packet_record_length = 68; // 2 pads
@@ -70,11 +70,11 @@ mod tests {
         let mut buf = [0u8; 84];
         {
             let ptr = &mut buf[..];
-            let mut writer = SnoopWriter::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
+            let mut writer = Writer::new(BufWriter::new(ptr), DataLinkType::Ethernet).unwrap();
             let data = HEADER[40..].to_vec();
             writer.write(data).unwrap();
         }
-        let mut reader = SnoopReader::new(BufReader::new(&buf[..])).unwrap();
+        let mut reader = Reader::new(BufReader::new(&buf[..])).unwrap();
         let packet = reader.read().unwrap();
         assert_eq!(packet.header.original_length, 44);
         assert_eq!(packet.header.included_length, 44);

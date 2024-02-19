@@ -30,7 +30,7 @@
 pub mod error;
 pub mod format;
 
-use crate::error::SnoopError;
+use crate::error::Error;
 
 #[cfg(feature = "parser")]
 pub mod parser;

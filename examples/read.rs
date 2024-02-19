@@ -1,6 +1,6 @@
 extern crate snoop;
 
-use snoop::reader::SnoopReader;
+use snoop::reader::Reader;
 use std::fs::File;
 use std::io::BufReader;
 
@@ -20,7 +20,7 @@ fn main() {
         }
     };
     let mut cnt = 0u32;
-    for i in SnoopReader::new(BufReader::new(fp)).unwrap() {
+    for i in Reader::new(BufReader::new(fp)).unwrap() {
         cnt += 1;
         let packet = i.unwrap();
         println!(

@@ -1,5 +1,5 @@
 extern crate snoop;
-use snoop::reader::SnoopReader;
+use snoop::reader::Reader;
 use std::fs::File;
 use std::io::BufReader;
 use std::time::Duration;
@@ -21,7 +21,7 @@ fn main() {
         }
     };
 
-    let mut stream = SnoopReader::new(BufReader::new(fp)).unwrap();
+    let mut stream = Reader::new(BufReader::new(fp)).unwrap();
     let time = Duration::from_millis(10000);
     let stream = stream.read_stream(time).unwrap();
     println!(

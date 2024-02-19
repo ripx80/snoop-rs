@@ -1,6 +1,6 @@
 extern crate snoop;
 
-use snoop::reader::SnoopReader;
+use snoop::reader::Reader;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
@@ -26,7 +26,7 @@ fn main() {
             }
         };
 
-        let mut sr = SnoopReader::new(BufReader::with_capacity(153600, fp)).unwrap();
+        let mut sr = Reader::new(BufReader::with_capacity(153600, fp)).unwrap();
         while let Some(i) = sr.iter_ref() {
             cnt += 1;
             let _packet = i.unwrap();

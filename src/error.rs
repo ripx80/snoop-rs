@@ -18,7 +18,7 @@ const TIME_EPOCH_EXEEDED: &str = "u32 time epoch exeeded use u64 instad";
 
 /// Errors that can happen inside snoop.
 #[derive(Debug)]
-pub enum SnoopError {
+pub enum Error {
     /// no valid snoop magic bytes found.
     UnknownMagic,
     /// no valid suppordetd snoop file format version found.
@@ -43,34 +43,34 @@ pub enum SnoopError {
     TimeEpoch,
 }
 
-impl fmt::Display for SnoopError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            SnoopError::UnknownMagic => write!(f, "{UNKNOWN_MAGIC}"),
-            SnoopError::UnknownVersion => write!(f, "{UNKNOWN_VERSION}"),
-            SnoopError::OriginalLenExceeded => write!(f, "{ORIGINAL_LEN_EXCEEDED}"),
-            SnoopError::CaptureLenExceeded => write!(f, "{CAPTURE_LEN_EXCEEDED}"),
-            SnoopError::InvalidRecordLength => write!(f, "{INVALID_RECORD_LENGTH}"),
-            SnoopError::InvalidPadLen => write!(f, "{INVALID_PAD_LENGTH}"),
-            SnoopError::Eof => write!(f, "{EOF}"),
-            SnoopError::UnexpectedEof(n) => write!(f, "{UNEXEOF}, read {n} bytes"),
-            SnoopError::Io(ref err) => err.fmt(f),
-            SnoopError::Time(ref err) => err.fmt(f),
-            SnoopError::TimeEpoch => write!(f, "{TIME_EPOCH_EXEEDED}"),
+            Error::UnknownMagic => write!(f, "{UNKNOWN_MAGIC}"),
+            Error::UnknownVersion => write!(f, "{UNKNOWN_VERSION}"),
+            Error::OriginalLenExceeded => write!(f, "{ORIGINAL_LEN_EXCEEDED}"),
+            Error::CaptureLenExceeded => write!(f, "{CAPTURE_LEN_EXCEEDED}"),
+            Error::InvalidRecordLength => write!(f, "{INVALID_RECORD_LENGTH}"),
+            Error::InvalidPadLen => write!(f, "{INVALID_PAD_LENGTH}"),
+            Error::Eof => write!(f, "{EOF}"),
+            Error::UnexpectedEof(n) => write!(f, "{UNEXEOF}, read {n} bytes"),
+            Error::Io(ref err) => err.fmt(f),
+            Error::Time(ref err) => err.fmt(f),
+            Error::TimeEpoch => write!(f, "{TIME_EPOCH_EXEEDED}"),
         }
     }
 }
 
-impl error::Error for SnoopError {} // add source: https://doc.rust-lang.org/std/error/trait.Error.html#provided-methods
+impl error::Error for Error {} // add source: https://doc.rust-lang.org/std/error/trait.Error.html#provided-methods
 
-impl From<SnoopError> for io::Error {
-    fn from(size_err: SnoopError) -> io::Error {
+impl From<Error> for io::Error {
+    fn from(size_err: Error) -> io::Error {
         io::Error::new(io::ErrorKind::Other, size_err)
     }
 }
 
-impl From<io::Error> for SnoopError {
-    fn from(err: io::Error) -> SnoopError {
-        SnoopError::Io(err)
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Error::Io(err)
     }
 }

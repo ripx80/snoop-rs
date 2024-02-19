@@ -3,20 +3,20 @@ mod common;
 #[cfg(test)]
 mod tests {
     use crate::common::HEADER;
-    use snoop::error::SnoopError;
+    use snoop::error::Error;
     use snoop::format::DataLinkType;
     use snoop::format::PacketHeader;
-    use snoop::parser::SnoopParser;
+    use snoop::parser::Parser;
 
     #[test]
     fn parser_header() {
-        SnoopParser::parse_header(&HEADER[..16].try_into().unwrap()).unwrap();
+        Parser::parse_header(&HEADER[..16].try_into().unwrap()).unwrap();
     }
 
     #[test]
     fn parser_header_link_type() {
         assert_eq!(
-            SnoopParser::parse_header(&HEADER[..16].try_into().unwrap())
+            Parser::parse_header(&HEADER[..16].try_into().unwrap())
                 .unwrap()
                 .link_type,
             DataLinkType::Ethernet
@@ -29,7 +29,7 @@ mod tests {
         h.copy_from_slice(&HEADER[0..16]);
         h[14] = 0xFF;
         assert_eq!(
-            SnoopParser::parse_header(&h).unwrap().link_type,
+            Parser::parse_header(&h).unwrap().link_type,
             DataLinkType::Unassigned
         );
     }
@@ -40,8 +40,8 @@ mod tests {
         h.copy_from_slice(&HEADER[0..16]);
         h[2] = 0xFF;
         assert!(matches!(
-            SnoopParser::parse_header(&h),
-            Err(SnoopError::UnknownMagic)
+            Parser::parse_header(&h),
+            Err(Error::UnknownMagic)
         ));
     }
 
@@ -51,8 +51,8 @@ mod tests {
         h.copy_from_slice(&HEADER[0..16]);
         h[11] = 0xFF;
         assert!(matches!(
-            SnoopParser::parse_header(&h),
-            Err(SnoopError::UnknownVersion)
+            Parser::parse_header(&h),
+            Err(Error::UnknownVersion)
         ));
     }
 
@@ -61,7 +61,7 @@ mod tests {
         let mut p = PacketHeader {
             ..Default::default()
         };
-        SnoopParser::parse_packet_header(&HEADER[16..40].try_into().unwrap(), &mut p).unwrap();
+        Parser::parse_packet_header(&HEADER[16..40].try_into().unwrap(), &mut p).unwrap();
         assert_eq!(p.original_length, 42);
         assert_eq!(p.included_length, 42);
         assert_eq!(p.packet_record_length, 68);
@@ -84,8 +84,8 @@ mod tests {
             ..Default::default()
         };
         assert!(matches!(
-            SnoopParser::parse_packet_header(&h, &mut p),
-            Err(SnoopError::OriginalLenExceeded)
+            Parser::parse_packet_header(&h, &mut p),
+            Err(Error::OriginalLenExceeded)
         ));
     }
 
@@ -107,8 +107,8 @@ mod tests {
             ..Default::default()
         };
         assert!(matches!(
-            SnoopParser::parse_packet_header(&h[16..].try_into().unwrap(), &mut p),
-            Err(SnoopError::CaptureLenExceeded)
+            Parser::parse_packet_header(&h[16..].try_into().unwrap(), &mut p),
+            Err(Error::CaptureLenExceeded)
         ));
     }
 
@@ -131,8 +131,8 @@ mod tests {
             ..Default::default()
         };
         assert!(matches!(
-            SnoopParser::parse_packet_header(&h[16..].try_into().unwrap(), &mut p),
-            Err(SnoopError::InvalidRecordLength)
+            Parser::parse_packet_header(&h[16..].try_into().unwrap(), &mut p),
+            Err(Error::InvalidRecordLength)
         ));
     }
 }

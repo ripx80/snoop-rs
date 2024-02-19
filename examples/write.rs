@@ -1,8 +1,8 @@
 extern crate snoop;
 
 use snoop::format::DataLinkType;
-use snoop::reader::SnoopReader;
-use snoop::writer::SnoopWriter;
+use snoop::reader::Reader;
+use snoop::writer::Writer;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 
@@ -29,8 +29,8 @@ fn main() {
             return;
         }
     };
-    let mut writer = SnoopWriter::new(BufWriter::new(out), DataLinkType::Ethernet).unwrap();
-    for i in SnoopReader::new(BufReader::new(fp)).unwrap() {
+    let mut writer = Writer::new(BufWriter::new(out), DataLinkType::Ethernet).unwrap();
+    for i in Reader::new(BufReader::new(fp)).unwrap() {
         let packet = i.unwrap();
         writer.write_packet(&packet).unwrap();
     }
