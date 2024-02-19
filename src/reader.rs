@@ -1,5 +1,8 @@
 //! reads from a underlying reader like a file or a buffer.
-use crate::format::{MAX_CAPTURE_LEN, MAX_CAPTURE_PADS, PacketHeader, SNOOP_HEADER_SIZE, SNOOP_PACKET_HEADER_SIZE, SnoopHeader, SnoopPacket, SnoopPacketRef};
+use crate::format::{
+    PacketHeader, SnoopHeader, SnoopPacket, SnoopPacketRef, MAX_CAPTURE_LEN, MAX_CAPTURE_PADS,
+    SNOOP_HEADER_SIZE, SNOOP_PACKET_HEADER_SIZE,
+};
 use crate::parser::Parser;
 use crate::Error;
 use std::io::Read;
@@ -45,8 +48,7 @@ where
     /// read and parse snoop file format header from the underlying reader
     fn read_header(&mut self) -> Result<(), Error> {
         self.read_exact(0, SNOOP_HEADER_SIZE)?;
-        self.header =
-            Parser::parse_header(&self.buf[0..SNOOP_HEADER_SIZE].try_into().unwrap())?;
+        self.header = Parser::parse_header(&self.buf[0..SNOOP_HEADER_SIZE].try_into().unwrap())?;
         Ok(())
     }
 

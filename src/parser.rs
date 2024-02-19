@@ -1,5 +1,8 @@
 //! parse snoop headers and calculate data len and pads.
-use crate::format::{DataLinkType, MAX_CAPTURE_LEN, PacketHeader, SNOOP_HEADER_SIZE, SNOOP_MAGIC, SNOOP_PACKET_HEADER_SIZE, SNOOP_VERSION, SnoopHeader};
+use crate::format::{
+    DataLinkType, PacketHeader, SnoopHeader, MAX_CAPTURE_LEN, SNOOP_HEADER_SIZE, SNOOP_MAGIC,
+    SNOOP_PACKET_HEADER_SIZE, SNOOP_VERSION,
+};
 use crate::Error;
 
 /// parse bytes as snoop format

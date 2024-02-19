@@ -39,10 +39,7 @@ mod tests {
         let mut h: [u8; 16] = [0; 16];
         h.copy_from_slice(&HEADER[0..16]);
         h[2] = 0xFF;
-        assert!(matches!(
-            Parser::parse_header(&h),
-            Err(Error::UnknownMagic)
-        ));
+        assert!(matches!(Parser::parse_header(&h), Err(Error::UnknownMagic)));
     }
 
     #[test]

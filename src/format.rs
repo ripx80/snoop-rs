@@ -3,8 +3,6 @@
 //! all integer values are stored in "big-endian" order, with the high-
 //! order bits first.
 
-use std::convert::TryFrom;
-
 /// size of the snoop header file format
 pub const SNOOP_HEADER_SIZE: usize = 16; // bytes
 /// magic bytes of a snoop file, in ascii "snoop"

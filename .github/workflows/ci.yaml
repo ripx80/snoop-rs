@@ -1,9 +1,12 @@
-name: CI
+name: ci
 
 on:
   push:
   pull_request:
-  schedule: [cron: "40 1 * * *"]
+  branches:
+    - master
+  schedule:
+  - cron: '00 01 * * *'
 
 permissions:
   contents: read
@@ -15,116 +18,110 @@ env:
 
 jobs:
   test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    name: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - build: pinned
+          os: ubuntu-latest
+          rust: 1.74.0
+        # - build: stable
+        #   os: ubuntu-latest
+        #   rust: stable
+        # - build: beta
+        #   os: ubuntu-latest
+        #   rust: beta
+        # - build: nightly
+        #   os: ubuntu-latest
+        #   rust: nightly
+        # - build: stable-musl
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: x86_64-unknown-linux-musl
+        # - build: stable-x86
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: i686-unknown-linux-gnu
+        # - build: stable-aarch64
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: aarch64-unknown-linux-gnu
+        # - build: stable-arm-gnueabihf
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: armv7-unknown-linux-gnueabihf
+        # - build: stable-arm-musleabihf
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: armv7-unknown-linux-musleabihf
+        # - build: stable-arm-musleabi
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: armv7-unknown-linux-musleabi
+        # - build: stable-powerpc64
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: powerpc64-unknown-linux-gnu
+        # - build: stable-s390x
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: s390x-unknown-linux-gnu
+        # - build: macos
+        #   os: macos-latest
+        #   rust: nightly
+        # - build: win-msvc
+        #   os: windows-2022
+        #   rust: nightly
+        # - build: win-gnu
+        #   os: windows-2022
+        #   rust: nightly-x86_64-gnu
     steps:
         - uses: actions/checkout@v4
-        - uses: dtolnay/rust-toolchain@nightly
-        - run: cd test_suite && cargo test --features full
+        - uses: dtolnay/rust-toolchain@master
+          with:
+            toolchain: ${{ matrix.rust }}
+        - name: run full test
+          run: cargo test --features full
+        - name: build
+          run: cargo build --verbose
+        - name: build full feature
+          run: cargo build --verbose --features full
 
-  # windows:
-  #   name: Test suite (windows)
-  #   runs-on: windows-latest
-  #   timeout-minutes: 45
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: dtolnay/rust-toolchain@nightly
-  #     - run: cd test_suite && cargo test --features full
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout repo
+      uses: actions/checkout@v4
+    - name: install rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+        components: rustfmt
+    - name: Check formatting
+      run: cargo fmt --all --check
 
-  # stable:
-  #   name: Rust ${{matrix.rust}}
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       rust: [stable, beta]
-  #   timeout-minutes: 45
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: dtolnay/rust-toolchain@master
-  #       with:
-  #         toolchain: ${{matrix.rust}}
-  #     - run: cd snoop && cargo build --features full
-  #     - run: cd snoop && cargo build --no-default-features
-
-  # nightly:
-  #   name: Rust nightly ${{matrix.os == 'windows' && '(windows)' || ''}}
-  #   runs-on: ${{matrix.os}}-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [ubuntu, windows]
-  #   timeout-minutes: 45
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: dtolnay/rust-toolchain@nightly
-  #     - run: cd snoop && cargo build
-  #     - run: cd snoop && cargo build --no-default-features
-  #     - run: cd snoop && cargo build --no-default-features --features parser
-  #     - run: cd snoop && cargo build --no-default-features --features reader
-  #     - run: cd snoop && cargo build --no-default-features --features writer
-  #     - run: cd snoop && cargo test --features full
-
-  # doc:
-  #   name: Documentation
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 45
-  #   env:
-  #     RUSTDOCFLAGS: -Dwarnings
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: dtolnay/rust-toolchain@nightly
-  #     - uses: dtolnay/install@cargo-docs-rs
-  #     - run: cargo docs-rs -p snoop
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout repo
+      uses: actions/checkout@v4
+    - name: install rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+    - name: check doc
+      env:
+        RUSTDOCFLAGS: -D warnings
+        run: cargo doc --features full --no-deps --document-private-items
 
   clippy:
-    name: Clippy
+    name: clippy
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@clippy
-      - run: cd snoop && cargo clippy --features full -- -Dclippy::all -Dclippy::pedantic
-
-  # miri:
-  #   name: Miri
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 45
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: dtolnay/rust-toolchain@miri
-  #     - run: cargo miri setup
-  #     - run: cd snoop && cargo miri test --features full
-  #       env:
-  #         MIRIFLAGS: -Zmiri-strict-provenance
-
-  # lints:
-  #   name: Lints
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout sources
-  #       uses: actions/checkout@v2
-
-  #     - name: Install nightly toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         profile: minimal
-  #         toolchain: nightly
-  #         override: true
-  #         components: rustfmt, clippy
-
-  #     - name: Run cargo fmt
-  #       uses: actions-rs/cargo@v1
-  #       continue-on-error: true # WARNING: only for this example, remove it!
-  #       with:
-  #         command: fmt
-  #         args: --all -- --check
-
-  #     - name: Run cargo clippy
-  #       uses: actions-rs/cargo@v1
-  #       continue-on-error: true # WARNING: only for this example, remove it!
-  #       with:
-  #         command: clippy
-  #         args: -- -D warnings
+      - run: cargo clippy --features full -- -Dclippy::all -Dclippy::pedantic

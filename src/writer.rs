@@ -1,5 +1,8 @@
 //! write to a underlying writer like a file or a buffer.
-use crate::format::{DataLinkType, MAX_CAPTURE_LEN, MAX_CAPTURE_PADS, PacketHeader, SNOOP_MAGIC, SNOOP_VERSION, SnoopHeader, SnoopPacket};
+use crate::format::{
+    DataLinkType, PacketHeader, SnoopHeader, SnoopPacket, MAX_CAPTURE_LEN, MAX_CAPTURE_PADS,
+    SNOOP_MAGIC, SNOOP_VERSION,
+};
 use crate::parser::Parser;
 use crate::Error;
 use std::io::Write;
@@ -127,7 +130,7 @@ where
             data,
         };
 
-        packet.header.original_length = match packet.data.len().try_into(){
+        packet.header.original_length = match packet.data.len().try_into() {
             Ok(s) => s,
             Err(_) => return Err(Error::OriginalLenExceeded),
         };
@@ -135,7 +138,7 @@ where
         packet.header.packet_record_length = packet.header.original_length + 24; // no pads
         packet.header.cumulative_drops = 0;
         // will be supported to 2038 :-)
-        packet.header.timestamp_seconds = match time.as_secs().try_into(){
+        packet.header.timestamp_seconds = match time.as_secs().try_into() {
             Ok(t) => t,
             Err(_) => return Err(Error::TimeEpoch),
         };
