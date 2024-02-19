@@ -6,8 +6,8 @@ authors = ["ripx80"]
 description = "snoop packet format parser reader and writer"
 
 license = "MIT"
-documentation = "https://docs.rs/pcap-file/"
-repository = "https://github.com/ripx80/snoop"
+documentation = "https://docs.rs/snoop"
+repository = "https://github.com/ripx80/snoop-rs"
 readme = "README.md"
 keywords = ["packet", "snoop", "parse", "read", "write"]
 categories = ["encoding", "parsing"]

@@ -14,6 +14,7 @@ const INVALID_PAD_LENGTH: &str =
     "invalid pad length. only 4 bytes as pads are supported in this implementation";
 const EOF: &str = "end of file";
 const UNEXEOF: &str = "unexpected end of file";
+const TIME_EPOCH_EXEEDED: &str = "u32 time epoch exeeded use u64 instad";
 
 /// Errors that can happen inside snoop.
 #[derive(Debug)]
@@ -38,21 +39,24 @@ pub enum SnoopError {
     Io(io::Error),
     /// wrapped time error
     Time(time::SystemTimeError),
+    /// the value of time in seconds not fit into u32 anymore
+    TimeEpoch,
 }
 
 impl fmt::Display for SnoopError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            SnoopError::UnknownMagic => write!(f, "{}", UNKNOWN_MAGIC),
-            SnoopError::UnknownVersion => write!(f, "{}", UNKNOWN_VERSION),
-            SnoopError::OriginalLenExceeded => write!(f, "{}", ORIGINAL_LEN_EXCEEDED),
-            SnoopError::CaptureLenExceeded => write!(f, "{}", CAPTURE_LEN_EXCEEDED),
-            SnoopError::InvalidRecordLength => write!(f, "{}", INVALID_RECORD_LENGTH),
-            SnoopError::InvalidPadLen => write!(f, "{}", INVALID_PAD_LENGTH),
-            SnoopError::Eof => write!(f, "{}", EOF),
-            SnoopError::UnexpectedEof(n) => write!(f, "{}, read {} bytes", UNEXEOF, n),
+            SnoopError::UnknownMagic => write!(f, "{UNKNOWN_MAGIC}"),
+            SnoopError::UnknownVersion => write!(f, "{UNKNOWN_VERSION}"),
+            SnoopError::OriginalLenExceeded => write!(f, "{ORIGINAL_LEN_EXCEEDED}"),
+            SnoopError::CaptureLenExceeded => write!(f, "{CAPTURE_LEN_EXCEEDED}"),
+            SnoopError::InvalidRecordLength => write!(f, "{INVALID_RECORD_LENGTH}"),
+            SnoopError::InvalidPadLen => write!(f, "{INVALID_PAD_LENGTH}"),
+            SnoopError::Eof => write!(f, "{EOF}"),
+            SnoopError::UnexpectedEof(n) => write!(f, "{UNEXEOF}, read {n} bytes"),
             SnoopError::Io(ref err) => err.fmt(f),
             SnoopError::Time(ref err) => err.fmt(f),
+            SnoopError::TimeEpoch => write!(f, "{TIME_EPOCH_EXEEDED}"),
         }
     }
 }

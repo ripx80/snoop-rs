@@ -76,7 +76,7 @@ pub struct PacketHeader {
     pub included_length: u32,
     /// PacketRecordLength uint32 12
     pub packet_record_length: u32,
-    /// CumulativeDrops uint32	16
+    /// CumulativeDrops uint32 16
     pub cumulative_drops: u32,
     /// TimestampSeconds uint32 20
     pub timestamp_seconds: u32,

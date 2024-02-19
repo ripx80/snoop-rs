@@ -1,6 +1,5 @@
 //! parse snoop headers and calculate data len and pads.
-
-use crate::format::*;
+use crate::format::{DataLinkType, MAX_CAPTURE_LEN, PacketHeader, SNOOP_HEADER_SIZE, SNOOP_MAGIC, SNOOP_PACKET_HEADER_SIZE, SNOOP_VERSION, SnoopHeader};
 use crate::SnoopError;
 
 /// parse bytes as snoop format
@@ -10,7 +9,11 @@ pub struct SnoopParser;
 impl SnoopParser {
     /// parse the snoop file format header.
     /// each snoop file has one snoop header as the begining of the file.
-    /// look for snoop magic bytes and return [SnoopHeader].
+    /// look for snoop magic bytes and return [`SnoopHeader`].
+    /// # Errors
+    /// will return [`SnoopError::UnknownMagic`] if no magic bytes are present at the beginning
+    /// will return [`SnoopError::UnknownVersion`] if the version not match version 2
+    #[allow(clippy::missing_panics_doc)]
     pub fn parse_header(buf: &[u8; SNOOP_HEADER_SIZE]) -> Result<SnoopHeader, SnoopError> {
         if &buf[0..8] != SNOOP_MAGIC {
             return Err(SnoopError::UnknownMagic);
@@ -27,8 +30,14 @@ impl SnoopParser {
         })
     }
 
-    /// parse the snoop packet header and return captured information as [PacketHeader].
+    /// parse the snoop packet header and return captured information as [`PacketHeader`].
     /// each captured packet has a packet header.
+    /// # Errors
+    /// will return [`SnoopError::OriginalLenExceeded`] if the maximium original len is exceeded.
+    /// will return [`SnoopError::CaptureLenExeeded`] if the supported capture len is exceeded.
+    /// will return [`SnoopError::InvalidRecordLength`] if the record length is invalid
+    #[allow(clippy::missing_panics_doc)]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn parse_packet_header(
         buf: &[u8; SNOOP_PACKET_HEADER_SIZE],
         ph: &mut PacketHeader,
@@ -55,12 +64,16 @@ impl SnoopParser {
     }
 
     /// calculate how many pad bytes are append to the packet data.
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn pad(ph: &PacketHeader) -> usize {
         (ph.packet_record_length - (SNOOP_PACKET_HEADER_SIZE as u32 + ph.included_length)) as usize
     }
 
     /// calculate the data len with pads included.
     /// pads must be stripped at the end of data bytes.
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn data_len(ph: &PacketHeader) -> usize {
         (ph.packet_record_length - SNOOP_PACKET_HEADER_SIZE as u32) as usize
     }

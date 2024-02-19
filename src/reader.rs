@@ -1,5 +1,5 @@
 //! reads from a underlying reader like a file or a buffer.
-use crate::format::*;
+use crate::format::{MAX_CAPTURE_LEN, MAX_CAPTURE_PADS, PacketHeader, SNOOP_HEADER_SIZE, SNOOP_PACKET_HEADER_SIZE, SnoopHeader, SnoopPacket, SnoopPacketRef};
 use crate::parser::SnoopParser;
 use crate::SnoopError;
 use std::io::Read;
@@ -20,6 +20,8 @@ where
 {
     /// create a new reader with internal buffer for the snoop header, packet header and packet data.
     /// read and parse the snoop file header on creation.
+    /// # Errors
+    /// will return [`SnoopError::UnknownMagic`] if no magic bytes are present at the beginning
     pub fn new(r: R) -> Result<Self, SnoopError> {
         let mut r = Self {
             r,
@@ -78,7 +80,7 @@ where
         let mut bytes: usize = 0;
         loop {
             match self.read_exact(bytes, size) {
-                Ok(_) => break,
+                Ok(()) => break,
                 Err(e) => match e {
                     SnoopError::Eof => {
                         thread::sleep(time);
@@ -96,6 +98,9 @@ where
 
     /// read a packet with snoop header and snoop data from the underlying reader and return a reference to internal buf.
     /// when this function is called again the data will be overwritten internaly.
+    /// # Errors
+    /// will return [`SnoopError`] if something unexpected happen.
+    #[allow(clippy::missing_panics_doc)]
     pub fn read_ref(&mut self) -> Result<SnoopPacketRef, SnoopError> {
         self.read_exact(0, SNOOP_PACKET_HEADER_SIZE)?;
         SnoopParser::parse_packet_header(
@@ -110,6 +115,8 @@ where
         })
     }
     /// read a packet with snoop header and snoop data from the underlying reader and return a copy of the data.
+    /// # Errors
+    /// will return [`SnoopError`] if something unexpected happen.
     pub fn read(&mut self) -> Result<SnoopPacket, SnoopError> {
         let pr = self.read_ref()?;
         Ok(SnoopPacket {
@@ -121,6 +128,9 @@ where
     /// read a packet with snoop header and snoop data from the underlying reader and return a reference of the data.
     /// read from a reader which is not finished yet. this function blocks until a valid EOF appeared.
     /// can be used if the reader is a socket or the file is not fully written.
+    /// # Errors
+    /// will return [`SnoopError`] if something unexpected happen.
+    #[allow(clippy::missing_panics_doc)]
     pub fn read_stream(&mut self, time: time::Duration) -> Result<SnoopPacketRef, SnoopError> {
         self.read_until(SNOOP_PACKET_HEADER_SIZE, time)?;
         SnoopParser::parse_packet_header(

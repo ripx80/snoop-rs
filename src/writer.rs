@@ -1,7 +1,7 @@
 //! write to a underlying writer like a file or a buffer.
-use crate::format::*;
-use crate::SnoopError;
+use crate::format::{DataLinkType, MAX_CAPTURE_LEN, MAX_CAPTURE_PADS, PacketHeader, SNOOP_MAGIC, SNOOP_VERSION, SnoopHeader, SnoopPacket};
 use crate::parser::SnoopParser;
+use crate::SnoopError;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -19,6 +19,8 @@ where
 {
     /// create a new writer with internal snoop header.
     /// write the internal header as snoop file header on creation.
+    /// # Errors
+    /// will return [`SnoopError::Io`] if something unexpected happen.
     pub fn new(w: W, link_type: DataLinkType) -> Result<Self, SnoopError> {
         let mut w = Self {
             w,
@@ -79,13 +81,18 @@ where
     }
 
     /// write packet data to reader
-    pub fn write_data(&mut self, data: &[u8], ) -> Result<(), SnoopError> {
+    /// # Errors
+    /// will return [`SnoopError`] if something unexpected happen.
+    pub fn write_data(&mut self, data: &[u8]) -> Result<(), SnoopError> {
         self.w.write(data).map_err(SnoopError::Io)?;
         Ok(())
     }
 
-    /// write packet header and data to writer and calculate pads from the given [SnoopHeader] inside [SnoopPacket].
+    /// write packet header and data to writer and calculate pads from the given [`SnoopHeader`] inside [`SnoopPacket`].
     /// use this function if you want to create the packet header yourself
+    /// # Errors
+    /// will return [`SnoopError`] if something unexpected happen.
+    #[allow(clippy::cast_possible_truncation)]
     pub fn write_packet(&mut self, packet: &SnoopPacket) -> Result<(), SnoopError> {
         self.write_packet_header(&packet.header)?;
         self.write_data(&packet.data)?;
@@ -98,7 +105,7 @@ where
                 self.w
                     .write(&padbuf[0..(self.pad as usize)])
                     .map_err(SnoopError::Io)?;
-            },
+            }
             _ => return Err(SnoopError::InvalidPadLen),
         };
         Ok(())
@@ -106,6 +113,9 @@ where
 
     /// write calculated header and the data as snoop packet data to writer.
     /// use this function if you want to auto generate the packet header.
+    /// # Errors
+    /// will return [`SnoopError`] if something unexpected happen.
+
     pub fn write(&mut self, data: Vec<u8>) -> Result<(), SnoopError> {
         let time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -117,11 +127,18 @@ where
             data,
         };
 
-        packet.header.original_length = packet.data.len().try_into().unwrap();
+        packet.header.original_length = match packet.data.len().try_into(){
+            Ok(s) => s,
+            Err(_) => return Err(SnoopError::OriginalLenExceeded),
+        };
         packet.header.included_length = packet.header.original_length; // not truncated
         packet.header.packet_record_length = packet.header.original_length + 24; // no pads
         packet.header.cumulative_drops = 0;
-        packet.header.timestamp_seconds = time.as_secs().try_into().unwrap(); // will be supported to 2038 :-)
+        // will be supported to 2038 :-)
+        packet.header.timestamp_seconds = match time.as_secs().try_into(){
+            Ok(t) => t,
+            Err(e) => return Err(SnoopError::TimeEpoch),
+        };
         packet.header.timestamp_microseconds = time.subsec_micros();
         self.write_packet(&packet)
     }
