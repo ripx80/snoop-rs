@@ -4,7 +4,7 @@ mod common;
 mod tests {
     use crate::common::HEADER;
     use snoop::error::Error;
-    use snoop::reader::Reader;
+    use snoop::read::Reader;
     use std::io::BufReader;
 
     #[test]

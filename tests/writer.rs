@@ -7,10 +7,10 @@ mod tests {
     use snoop::format::DataLinkType;
     use snoop::format::PacketHeader;
     use snoop::format::SnoopPacket;
-    use snoop::writer::Writer;
+    use snoop::write::Writer;
     use std::io::BufWriter;
 
-    use snoop::reader::Reader;
+    use snoop::read::Reader;
     use std::io::BufReader;
 
     #[test]

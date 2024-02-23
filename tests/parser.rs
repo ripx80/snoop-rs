@@ -6,7 +6,7 @@ mod tests {
     use snoop::error::Error;
     use snoop::format::DataLinkType;
     use snoop::format::PacketHeader;
-    use snoop::parser::Parser;
+    use snoop::parse::Parser;
 
     #[test]
     fn parser_header() {

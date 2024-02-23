@@ -3,7 +3,7 @@ use crate::format::{
     DataLinkType, PacketHeader, SnoopHeader, SnoopPacket, MAX_CAPTURE_LEN, MAX_CAPTURE_PADS,
     SNOOP_MAGIC, SNOOP_VERSION,
 };
-use crate::parser::Parser;
+use crate::parse::Parser;
 use crate::Error;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};

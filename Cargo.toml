@@ -17,11 +17,11 @@ exclude = ["tests", "examples", "flake.nix", "flake.lock"]
 [dependencies]
 
 [features]
-default = ["parser"]
-full = ["reader", "writer"]
-reader = []
-writer = []
-parser = []
+default = ["parse"]
+full = ["read", "write"]
+read = []
+write = []
+parse = []
 
 [profile.release]
 panic = 'abort'
@@ -38,24 +38,24 @@ incremental = true
 
 [[example]]
 name = "read"
-required-features = ["reader"]
+required-features = ["read"]
 
 [[example]]
 name = "write"
-required-features = ["reader", "writer"]
+required-features = ["read", "write"]
 
 [[example]]
 name = "stream"
-required-features = ["reader"]
+required-features = ["read"]
 
 [[example]]
 name = "bulk"
-required-features = ["reader"]
+required-features = ["read"]
 
 [[example]]
 name = "bulk_ref"
-required-features = ["reader"]
+required-features = ["read"]
 
 [[example]]
 name = "bulk_buf"
-required-features = ["reader"]
+required-features = ["read"]

@@ -1,5 +1,5 @@
 extern crate snoop;
-use snoop::reader::Reader;
+use snoop::read::Reader;
 use std::fs::File;
 use std::io::BufReader;
 use std::time::Duration;

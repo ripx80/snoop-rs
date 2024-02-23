@@ -3,7 +3,7 @@ use crate::format::{
     PacketHeader, SnoopHeader, SnoopPacket, SnoopPacketRef, MAX_CAPTURE_LEN, MAX_CAPTURE_PADS,
     SNOOP_HEADER_SIZE, SNOOP_PACKET_HEADER_SIZE,
 };
-use crate::parser::Parser;
+use crate::parse::Parser;
 use crate::Error;
 use std::io::Read;
 use std::{thread, time};
