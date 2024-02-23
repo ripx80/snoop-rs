@@ -1,6 +1,8 @@
 name: release
 
 on:
+  release:
+    types: [created]
   push:
     branches: [master]
     tags:
@@ -15,14 +17,21 @@ env:
   project: snoop
 
 jobs:
-  # The create-release job runs purely to initialize the GitHub release itself,
-  # and names the release after the `x.y.z` tag that was pushed. It's separate
-  # from building the release so that we only create the release once.
-  create-release:
-    name: create-release
+  release:
+    name: release ${{ matrix.target }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-gnu
+            archive: zip
+          - target: x86_64-unknown-linux-musl
+            archive: tar.gz tar.xz tar.zst
+          - target: x86_64-apple-darwin
+            archive: zip
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@master
       - name: Get the release version from the tag
         if: env.VERSION == ''
         run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
@@ -36,127 +45,12 @@ jobs:
             echo "version does not match Cargo.toml" >&2
             exit 1
           fi
-      - name: Create GitHub release
+      - name: compile and release
+        uses: rust-build/rust-build.action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create $VERSION --draft --verify-tag --title $VERSION
+        with:
+          RUSTTARGET: ${{ matrix.target }}
+          ARCHIVE_TYPES: ${{ matrix.archive }}
     outputs:
       version: ${{ env.VERSION }}
-
-  build-release:
-    name: build-release
-    needs: ['create-release']
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-        - build: linux
-          os: ubuntu-latest
-          rust: nightly
-          target: x86_64-unknown-linux-musl
-          strip: x86_64-linux-musl-strip
-        - build: stable-x86
-          os: ubuntu-latest
-          rust: stable
-          target: i686-unknown-linux-gnu
-          strip: x86_64-linux-gnu-strip
-          qemu: i386
-        # - build: stable-aarch64
-        #   os: ubuntu-latest
-        #   rust: stable
-        #   target: aarch64-unknown-linux-gnu
-        #   strip: aarch64-linux-gnu-strip
-        #   qemu: qemu-aarch64
-        # - build: stable-arm-gnueabihf
-        #   os: ubuntu-latest
-        #   rust: stable
-        #   target: armv7-unknown-linux-gnueabihf
-        #   strip: arm-linux-gnueabihf-strip
-        #   qemu: qemu-arm
-        # - build: stable-arm-musleabihf
-        #   os: ubuntu-latest
-        #   rust: stable
-        #   target: armv7-unknown-linux-musleabihf
-        #   strip: arm-linux-musleabihf-strip
-        #   qemu: qemu-arm
-        # - build: stable-arm-musleabi
-        #   os: ubuntu-latest
-        #   rust: stable
-        #   target: armv7-unknown-linux-musleabi
-        #   strip: arm-linux-musleabi-strip
-        #   qemu: qemu-arm
-        # - build: stable-powerpc64
-        #   os: ubuntu-latest
-        #   rust: stable
-        #   target: powerpc64-unknown-linux-gnu
-        #   strip: powerpc64-linux-gnu-strip
-        #   qemu: qemu-ppc64
-        # - build: stable-s390x
-        #   os: ubuntu-latest
-        #   rust: stable
-        #   target: s390x-unknown-linux-gnu
-        #   strip: s390x-linux-gnu-strip
-        #   qemu: qemu-s390x
-        # - build: macos
-        #   os: macos-latest
-        #   rust: nightly
-        #   target: x86_64-apple-darwin
-        # - build: win-msvc
-        #   os: windows-latest
-        #   rust: nightly
-        #   target: x86_64-pc-windows-msvc
-        # - build: win-gnu
-        #   os: windows-latest
-        #   rust: nightly-x86_64-gnu
-        #   target: x86_64-pc-windows-gnu
-        # - build: win32-msvc
-        #   os: windows-latest
-        #   rust: nightly
-        #   target: i686-pc-windows-msvc
-
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: install rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: ${{ matrix.rust }}
-        target: ${{ matrix.target }}
-    - name: build
-      uses: actions-rs/cargo@v1
-      with:
-        use-cross: true
-        command: build
-        args: --release --features full --locked --target=${{ matrix.target }}
-
-      # - name: upload
-      #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: ${{ env.project }}_${{ matrix.target }}
-      #     path: |
-      #       ./target/${{ matrix.target }}/release/${{ env.project }}
-      #       ./target/${{ matrix.target }}/release/${{ env.project }}.exe
-
-
-
-#   release:
-#     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-#     needs: [build]
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Download
-#         uses: actions/download-artifact@v2
-#         with:
-#           path: artifacts
-
-#       - name: Archives
-#         run: find artifacts -mindepth 1 -maxdepth 1  -exec tar -C {} -cvzf {}.tgz . \;
-
-#       - name: Release
-#         uses: softprops/action-gh-release@v1
-#         with:
-#           files: |
-#             artifacts/*.tgz
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.PAT }}

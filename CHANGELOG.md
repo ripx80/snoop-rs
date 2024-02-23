@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- [x] snoop format
+- [x] snoop parser
+- [x] snoop writer
+- [x] reader
 - [x] doc with examples
 - [x] nix flake support
-- [x] snoop parser
-- [x] snoop writer, reader
