@@ -1,18 +1,19 @@
 [package]
 name = "snoop"
 edition = "2021"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["ripx80"]
 description = "snoop packet format parser reader and writer"
 
 license = "MIT"
 documentation = "https://docs.rs/snoop"
 repository = "https://github.com/ripx80/snoop-rs"
+homepage = "https://github.com/ripx80/snoop-rs"
 readme = "README.md"
 keywords = ["packet", "snoop", "parse", "read", "write"]
 categories = ["encoding", "parsing"]
 
-exclude = ["tests", "examples", "flake.nix", "flake.lock"]
+exclude = ["tests", ".github", "flake.nix", "doc", "flake.lock"]
 
 [dependencies]
 
